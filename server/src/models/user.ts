@@ -33,7 +33,7 @@ const UserSchema: Schema = new mongoose.Schema({
   authentication: {
     salt: { type: String, select: false },
     password: { type: String, select: false },
-    sessionToken: { type: String },
+    sessionToken: { type: String, select: false },
   },
 });
 

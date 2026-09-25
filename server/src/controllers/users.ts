@@ -6,7 +6,6 @@ import {
   isFriendRequestPending,
   IUser,
 } from "../models/user";
-import mongoose from "mongoose";
 
 export const getAllUsers = async (
   req: express.Request,

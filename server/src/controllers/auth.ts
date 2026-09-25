@@ -1,6 +1,11 @@
 import express from "express";
-import { createUser, getUserByEmail, IUserWithAuth } from "../models/user";
-import { encrypt, random } from "../lib/encryption";
+import {
+  createUser,
+  getUserByEmail,
+  getUserBySessionToken,
+  IUserWithAuth,
+} from "../models/user";
+import { hashPassword, hashSessionToken, random } from "../lib/encryption";
 
 export const register = async (req: express.Request, res: express.Response) => {
   try {
@@ -17,7 +22,7 @@ export const register = async (req: express.Request, res: express.Response) => {
     }
 
     const salt = random();
-    const encryptedPassword = encrypt(salt, password);
+    const encryptedPassword = hashPassword(salt, password);
 
     const user = await createUser({
       username,
@@ -27,6 +32,8 @@ export const register = async (req: express.Request, res: express.Response) => {
         password: encryptedPassword,
       },
     });
+
+    delete user.authentication;
 
     return res.status(201).json(user).end();
   } catch (error) {
@@ -51,22 +58,77 @@ export const login = async (req: express.Request, res: express.Response) => {
       return res.sendStatus(400);
     }
 
-    const encryptedPassword = encrypt(user.authentication.salt, password);
+    const encryptedPassword = hashPassword(user.authentication.salt, password);
 
     if (encryptedPassword !== user.authentication.password) {
       return res.sendStatus(403);
     }
 
-    const salt = random();
-    user.authentication.sessionToken = encrypt(salt, user._id.toString());
+    const sessionToken = random();
+    const hashedSessionToken = hashSessionToken(sessionToken);
 
-    await user.save();
-    res.cookie("USER_AUTH", user.authentication.sessionToken, {
-      domain: "localhost",
-      path: "/",
+    await user.updateOne({
+      "authentication.sessionToken": hashedSessionToken,
     });
 
-    return res.status(200).json(user).end();
+    res.cookie("USER_AUTH", sessionToken, {
+      httpOnly: true,
+      domain: "localhost",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 5 * 24 * 60 * 60 * 100,
+    });
+
+    const userRes = user.toObject();
+    delete userRes.authentication;
+
+    return res.status(200).json(userRes).end();
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(403);
+  }
+};
+
+export const restoreSession = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const sessionToken = req.cookies["USER_AUTH"];
+
+    if (!sessionToken) {
+      return res.sendStatus(400);
+    }
+
+    const hashedSessionToken = hashSessionToken(sessionToken);
+
+    const user = (await getUserBySessionToken(hashedSessionToken).select(
+      "+authentication",
+    )) as IUserWithAuth;
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const newSessionToken = random();
+    const newHashedSessionToken = hashSessionToken(newSessionToken);
+
+    await user.updateOne({
+      "authentication.sessionToken": newHashedSessionToken,
+    });
+
+    res.cookie("USER_AUTH", newSessionToken, {
+      httpOnly: true,
+      domain: "localhost",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 5 * 24 * 60 * 60 * 100,
+    });
+
+    const userRes = user.toObject();
+
+    delete userRes.authentication;
+
+    return res.status(200).json(userRes).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(403);

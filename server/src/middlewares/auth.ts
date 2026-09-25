@@ -1,6 +1,7 @@
 import express from "express";
 import { getUserBySessionToken } from "../models/user";
 import { get, merge } from "lodash";
+import { hashSessionToken } from "../lib/encryption";
 
 export const isAuthenticated = async (
   req: express.Request,
@@ -14,7 +15,9 @@ export const isAuthenticated = async (
       return res.sendStatus(403);
     }
 
-    const foundUser = await getUserBySessionToken(sessionToken);
+    const hashedSessionToken = hashSessionToken(sessionToken);
+
+    const foundUser = await getUserBySessionToken(hashedSessionToken);
 
     if (!foundUser) {
       return res.sendStatus(403);
