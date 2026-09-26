@@ -47,6 +47,7 @@ export const login = async (req: express.Request, res: express.Response) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.log("No body");
       return res.sendStatus(400);
     }
 

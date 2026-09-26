@@ -4,10 +4,19 @@ import "./index.css";
 import Home from "./Home";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Auth from "./Auth";
+import PageContainer from "./PageContainer";
+import { login } from "./api/auth";
 
 const router = createBrowserRouter([
-  { path: "/", element: <Home /> },
-  { path: "/login", element: <Auth /> },
+  {
+    path: "/",
+    element: <PageContainer page={<Home />} />,
+  },
+  {
+    path: "/login",
+    element: <PageContainer page={<Auth />} />,
+    action: login
+  },
 ]);
 
 createRoot(document.getElementById("root")!).render(
