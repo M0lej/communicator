@@ -135,10 +135,12 @@ UserSchema.methods.removeSentFriendRequest = async function (
 
   return this;
 };
-
 export const UserModel = mongoose.model<IUser>("User", UserSchema);
 
 export const getUsers = () => UserModel.find();
+
+export const _getUsersByUsername = (userName: string) =>
+  UserModel.find({ username: { $regex: userName, $options: "i" } });
 
 export const getUserByEmail = (email: string) => UserModel.findOne({ email });
 
@@ -159,3 +161,18 @@ export const doesFriendExist = (currentUser: IUser, otherId: string) =>
   currentUser.friends.findIndex((id: mongoose.Types.ObjectId) =>
     id.equals(otherId as string),
   ) !== -1;
+
+export const _getFriends = (currentUser: IUser) =>
+  UserModel.find({
+    _id: { $in: currentUser.friends },
+  });
+
+export const _getSentFriendRequests = (currentUser: IUser) =>
+  UserModel.find({
+    _id: { $in: currentUser.sentFriendRequests },
+  });
+
+export const _getPendingFriendRequests = (currentUser: IUser) =>
+  UserModel.find({
+    _id: { $in: currentUser.pendingFriendRequests },
+  });

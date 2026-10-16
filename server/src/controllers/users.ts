@@ -1,18 +1,44 @@
 import express from "express";
 import {
+  _getFriends,
+  _getPendingFriendRequests,
+  _getSentFriendRequests,
+  _getUsersByUsername,
   doesFriendExist,
   getUserById,
   getUsers,
   isFriendRequestPending,
   IUser,
 } from "../models/user";
+import { get } from "lodash";
+import mongoose from "mongoose";
 
 export const getAllUsers = async (
   req: express.Request,
   res: express.Response,
 ) => {
   try {
-    const users = await getUsers();
+    const users = (await getUsers()) ?? [];
+
+    return res.status(200).json(users).end();
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const getUsersByUsername = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { username } = req.params;
+
+    if (!username) {
+      return res.sendStatus(400);
+    }
+
+    const users = (await _getUsersByUsername(username as string)) ?? [];
 
     return res.status(200).json(users).end();
   } catch (error) {
@@ -74,6 +100,66 @@ export const updateUser = async (
   }
 };
 
+export const getFriends = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+
+    if (!currentUser) {
+      return res.sendStatus(400);
+    }
+
+    const users: IUser[] = (await _getFriends(currentUser)) ?? [];
+
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const getSentFriendRequests = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+
+    if (!currentUser) {
+      return res.sendStatus(400);
+    }
+
+    const users: IUser[] = (await _getSentFriendRequests(currentUser)) ?? [];
+
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const getPendingFriendRequests = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+
+    if (!currentUser) {
+      return res.sendStatus(400);
+    }
+
+    const users: IUser[] = (await _getPendingFriendRequests(currentUser)) ?? [];
+
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(400);
+  }
+};
+
 export const sendFriendRequest = async (
   req: express.Request,
   res: express.Response,
@@ -96,16 +182,28 @@ export const sendFriendRequest = async (
       return res.sendStatus(403);
     }
 
-    const isAlreadyAdded = doesFriendExist(currentUser, otherId as string);
-
-    if (isAlreadyAdded) {
+    if (currentUser.sentFriendRequests.includes(otherUser._id)) {
       return res.sendStatus(403);
     }
 
-    currentUser.sendFriendRequest(otherId as string);
-    otherUser.receiveFriendRequest(userId as string);
+    const isAlreadyAFriend = await doesFriendExist(
+      currentUser,
+      otherId as string,
+    );
 
-    return res.status(200).json(currentUser).end();
+    if (isAlreadyAFriend) {
+      return res.sendStatus(403);
+    }
+
+    if (otherUser.sentFriendRequests.includes(currentUser._id)) {
+      currentUser.acceptFriendRequest(otherId as string);
+      otherUser.receiveFriendRequestAccept(userId as string);
+    } else {
+      currentUser.sendFriendRequest(otherId as string);
+      otherUser.receiveFriendRequest(userId as string);
+    }
+
+    return res.status(200).json(otherUser).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);
@@ -142,7 +240,7 @@ export const removeFriend = async (
     currentUser.removeFriend(otherId as string);
     otherUser.removeFriend(userId as string);
 
-    return res.status(200).json(currentUser).end();
+    return res.status(200).json(otherUser).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);
@@ -179,14 +277,14 @@ export const acceptFriendRequest = async (
     currentUser.acceptFriendRequest(otherId as string);
     otherUser.receiveFriendRequestAccept(userId as string);
 
-    return res.status(200).json(currentUser).end();
+    return res.status(200).json(otherUser).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);
   }
 };
 
-export const removeFriendRequest = async (
+export const denyFriendRequest = async (
   req: express.Request,
   res: express.Response,
 ) => {
@@ -216,7 +314,7 @@ export const removeFriendRequest = async (
     currentUser.removePendingFriendRequest(otherId as string);
     otherUser.removeSentFriendRequest(userId as string);
 
-    return res.status(200).json(currentUser).end();
+    return res.status(200).json(otherUser).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);

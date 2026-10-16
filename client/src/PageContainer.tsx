@@ -1,21 +1,32 @@
 import { Menu } from "@boxicons/react";
 import MenuLink from "./components/MenuLink";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { getUserData } from "./api/auth";
+import { useUserContext } from "./providers/UserProvider";
 
 export default function PageContainer({ page }: { page?: ReactNode }) {
   const [expanded, setExpanded] = useState<boolean>(false);
-
+  const { user, setUser } = useUserContext();
   const hideMenu = () => setExpanded(false);
 
+  useEffect(() => {
+    getUser();
+  }, []);
+
+  async function getUser() {
+    const res = await getUserData();
+    setUser(res);
+  }
+
   return (
-    <div className="w-screen h-screen max-sm:flex grid grid-cols-[auto_1fr] grid-rows-1">
+    <div className="w-full h-screen max-sm:flex flex-col grid grid-cols-[auto_1fr] grid-rows-1">
       <button
         className={`
           fixed 
           ${!expanded ? "left-5" : "max-sm:left-5 left-50"} 
           cursor-pointer 
           transition-all 
-          z-10
+          z-20
           top-5
         `}
         onClick={() => setExpanded(!expanded)}
@@ -37,24 +48,28 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           overflow-hidden
           pt-15
           gap-2
+          z-10
         `}
       >
+        {user !== null && <h1>Logged in as {user.username}</h1>}
         <MenuLink
           to={"/"}
           className="flex w-full justify-center py-5"
           onClick={hideMenu}
         >
-          Home
+          Chats
         </MenuLink>
+        {user === null && (
+          <MenuLink
+            to={"/login"}
+            className="flex w-full justify-center py-5"
+            onClick={hideMenu}
+          >
+            Login
+          </MenuLink>
+        )}
         <MenuLink
-          to={"/login"}
-          className="flex w-full justify-center py-5"
-          onClick={hideMenu}
-        >
-          Login
-        </MenuLink>
-        <MenuLink
-          to={"/"}
+          to={"/friends"}
           className="flex w-full justify-center py-5"
           onClick={hideMenu}
         >
@@ -65,7 +80,7 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           className="flex w-full justify-center py-5"
           onClick={hideMenu}
         >
-          Settings
+          Account
         </MenuLink>
       </section>
       {page}

@@ -90,6 +90,32 @@ export const login = async (req: express.Request, res: express.Response) => {
   }
 };
 
+export const isLoggedIn = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const sessionToken = req.cookies["USER_AUTH"];
+
+    if (!sessionToken) {
+      return res.sendStatus(400);
+    }
+
+    const hashedSessionToken = hashSessionToken(sessionToken);
+
+    const foundUser = await getUserBySessionToken(hashedSessionToken);
+
+    if (!foundUser) {
+      return res.sendStatus(403);
+    }
+
+    return res.status(200).json(foundUser).end();
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(403);
+  }
+};
+
 export const restoreSession = async (
   req: express.Request,
   res: express.Response,

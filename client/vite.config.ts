@@ -7,11 +7,15 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      "/testAPI": "http://localhost:8080",
-      "/auth": "http://localhost:8080",
-      "/users": "http://localhost:8080",
-      "/chats": "http://localhost:8080",
-      "/messages": "http://localhost:8080",
+      "/api/testAPI": "http://localhost:8080",
+      "/api/auth": "http://localhost:8080",
+      "/api/users": "http://localhost:8080",
+      "/api/chats": "http://localhost:8080",
+      "/api/chat": "http://localhost:8080",
+      "/api/messages": {
+        target: "http://localhost:8080",
+        ws: true,
+      },
     },
   },
 });

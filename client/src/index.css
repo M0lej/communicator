@@ -2,6 +2,18 @@
 
 @theme {
   --color-baby-powder-white: #f8f7f2;
+  --animate-pop-from-bottom: popFromBottom 0.2s ease-in-out forwards;
+
+  @keyframes popFromBottom {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0%);
+      opacity: 1;
+    }
+  }
 }
 
 body {

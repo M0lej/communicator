@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+export interface IMessage {
+  sender: mongoose.Types.ObjectId;
+  receiver: mongoose.Types.ObjectId;
+  chatId: mongoose.Types.ObjectId;
+  content: string;
+}
+
 const MessageSchema = new mongoose.Schema(
   {
     sender: {
@@ -24,7 +31,7 @@ const MessageSchema = new mongoose.Schema(
   },
 );
 
-export const MessageModel = mongoose.model("Message", MessageSchema);
+export const MessageModel = mongoose.model<IMessage>("Message", MessageSchema);
 
 export const getMessageById = async (id: string) =>
   await MessageModel.findOne({ id });

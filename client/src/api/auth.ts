@@ -11,15 +11,29 @@ export async function login({ request }: { request: Request }) {
     }
 
     const response = await axios({
-      method: "post",
-      url: "/auth/login",
+      method: "POST",
+      url: "/api/auth/login",
       data: {
         email,
         password,
       },
     });
 
-    return response;
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function getUserData() {
+  try {
+    const response = await axios({
+      method: "get",
+      url: "/api/auth/me",
+    });
+
+    return response.data;
   } catch (error) {
     console.error(error);
     return null;
