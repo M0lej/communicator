@@ -4,8 +4,9 @@ import {
   createNewChat,
   getChatById,
   getChatsByUserId,
+  IChat,
 } from "../models/chat";
-import { getUserById } from "../models/user";
+import { _getUsersByIds, getUserById, IUser } from "../models/user";
 import { get } from "lodash";
 
 export const getChats = async (req: express.Request, res: express.Response) => {
@@ -18,7 +19,18 @@ export const getChats = async (req: express.Request, res: express.Response) => {
 
     const chats = (await getChatsByUserId(userId as string)) ?? [];
 
-    return res.status(200).json(chats).end();
+    const chatsWithUserNames = await Promise.all(
+      chats.map(async (chat: IChat) => {
+        const chatUsers: IUser[] = (await _getUsersByIds(chat.users)) ?? [];
+
+        return {
+          ...chat.toObject(),
+          userNames: chatUsers.map((chatUser) => chatUser.username),
+        };
+      }),
+    );
+
+    return res.status(200).json(chatsWithUserNames).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);
@@ -33,13 +45,21 @@ export const getChat = async (req: express.Request, res: express.Response) => {
       return res.sendStatus(400);
     }
 
-    const chat = await getChatById(chatId as string);
+    const chat: IChat | null = await getChatById(chatId as string);
 
     if (!chat) {
       return res.sendStatus(403);
     }
 
-    return res.status(200).json(chat).end();
+    const chatUsers: IUser[] = (await _getUsersByIds(chat.users)) ?? [];
+
+    return res
+      .status(200)
+      .json({
+        ...chat.toObject(),
+        userNames: chatUsers.map((chatUser) => chatUser.username),
+      })
+      .end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);

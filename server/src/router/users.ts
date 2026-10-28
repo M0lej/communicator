@@ -11,14 +11,23 @@ import {
   getFriends,
   getSentFriendRequests,
   getPendingFriendRequests,
+  getUsersByIds,
+  updatePassword,
 } from "../controllers/users";
 import { isAuthenticated, isOwner } from "../middlewares/auth";
 
 export default function usersRouter(router: express.Router) {
   router.get("/users", isAuthenticated, getAllUsers);
+  router.post("/users/ids", isAuthenticated, getUsersByIds);
   router.get("/users/find/:username", isAuthenticated, getUsersByUsername);
   router.delete("/users/:userId", isAuthenticated, isOwner, deleteUser);
   router.patch("/users/:userId", isAuthenticated, isOwner, updateUser);
+  router.patch(
+    "/users/:userId/password/",
+    isAuthenticated,
+    isOwner,
+    updatePassword,
+  );
   router.get("/users/me/friends", isAuthenticated, getFriends);
   router.get(
     "/users/me/friends/requests/sent",

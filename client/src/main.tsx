@@ -8,7 +8,8 @@ import { login } from "./api/auth";
 import { UserProvider } from "./providers/UserProvider";
 import Chat from "./pages/Chat";
 import Friends from "./pages/Friends";
-import { users } from "./api/users";
+import { updateUser, users } from "./api/users";
+import Account from "./pages/Account";
 
 const router = createBrowserRouter([
   {
@@ -28,6 +29,11 @@ const router = createBrowserRouter([
     path: "/friends",
     element: <PageContainer page={<Friends />} />,
     action: users,
+  },
+  {
+    path: "/account",
+    element: <PageContainer page={<Account />} />,
+    action: updateUser,
   },
 ]);
 

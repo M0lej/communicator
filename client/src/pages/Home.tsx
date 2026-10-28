@@ -12,7 +12,6 @@ export default function Home() {
   }, [user]);
 
   async function fetchChats() {
-    console.log(user);
     if (!user) return;
 
     const res = await getChats(user._id);

@@ -17,7 +17,8 @@ export const isAuthenticated = async (
 
     const hashedSessionToken = hashSessionToken(sessionToken);
 
-    const foundUser = await getUserBySessionToken(hashedSessionToken);
+    const foundUser =
+      await getUserBySessionToken(hashedSessionToken).select("authentication");
 
     if (!foundUser) {
       return res.sendStatus(403);

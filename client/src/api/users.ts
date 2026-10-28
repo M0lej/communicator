@@ -1,15 +1,17 @@
 import axios from "axios";
 import type { IUser } from "../providers/UserProvider";
+import { comparePassword } from "./auth";
 
 interface IUsersArrayResponse {
   intent: "find";
   data: IUser[];
 }
 
-export type Intent = "add" | "remove" | "pending_accept" | "pending_deny";
+export type UsersIntent = "add" | "remove" | "pending_accept" | "pending_deny";
+export type UpdateUserIntent = "username" | "password";
 
 interface IUsersSingleResponse {
-  intent: Intent;
+  intent: UsersIntent;
   data: IUser;
 }
 
@@ -190,4 +192,106 @@ export async function getPendingFriendRequests() {
     console.error(error);
     return null;
   }
+}
+
+export async function updateUser({ request }: { request: Request }) {
+  try {
+    const data = Object.fromEntries((await request.formData()).entries());
+
+    const {
+      intent,
+      userId,
+      username,
+      oldPassword,
+      newPassword,
+      confirmPassword,
+    } = data;
+
+    if (!intent) {
+      return null;
+    }
+
+    switch (intent as UpdateUserIntent) {
+      case "username":
+        return await updateUsername(userId as string, username as string);
+      case "password":
+        return await updatePassword(
+          userId as string,
+          oldPassword as string,
+          newPassword as string,
+          confirmPassword as string,
+        );
+      default:
+        return null;
+    }
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+export async function getUsersByIds(ids: string[]) {
+  try {
+    if (!ids) return null;
+
+    const response = await axios({
+      method: "POST",
+      url: `/api/users/ids`,
+      data: {
+        ids: ids,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+async function updateUsername(userId: string, username: string) {
+  if (!userId || !username) return null;
+
+  const response = await axios({
+    method: "PATCH",
+    url: `/api/users/${encodeURIComponent(userId as string)}`,
+    data: {
+      username,
+    },
+  });
+
+  return response.data;
+}
+
+async function updatePassword(
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+) {
+  if (!userId || !oldPassword || !newPassword || !confirmPassword) return null;
+
+  if (newPassword != confirmPassword) {
+    return { error: "Passwords doesn't match." };
+  }
+
+  const isOldPasswordCorrect = await comparePassword(
+    userId as string,
+    oldPassword as string,
+  );
+
+  if (!isOldPasswordCorrect) {
+    return { error: "Incorrect old password." };
+  }
+
+  const response = await axios({
+    method: "PATCH",
+    url: `/api/users/${encodeURIComponent(userId as string)}/password`,
+    data: {
+      oldPassword,
+      password: newPassword,
+    },
+  });
+
+  return response.data;
 }

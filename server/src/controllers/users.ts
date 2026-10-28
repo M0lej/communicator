@@ -3,15 +3,17 @@ import {
   _getFriends,
   _getPendingFriendRequests,
   _getSentFriendRequests,
+  _getUsersByIds,
   _getUsersByUsername,
   doesFriendExist,
   getUserById,
   getUsers,
   isFriendRequestPending,
   IUser,
+  IUserWithAuth,
 } from "../models/user";
 import { get } from "lodash";
-import mongoose from "mongoose";
+import { hashPassword, random } from "../lib/encryption";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -19,6 +21,26 @@ export const getAllUsers = async (
 ) => {
   try {
     const users = (await getUsers()) ?? [];
+
+    return res.status(200).json(users).end();
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const getUsersByIds = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const ids = req.body?.ids;
+
+    if (!Array.isArray(ids)) {
+      return res.sendStatus(400);
+    }
+
+    const users = (await _getUsersByIds(ids as string[])) ?? [];
 
     return res.status(200).json(users).end();
   } catch (error) {
@@ -85,15 +107,61 @@ export const updateUser = async (
       return res.sendStatus(400);
     }
 
-    const user: IUser = (await getUserById(userId as string)) as IUser;
+    const user: IUser | null = await getUserById(userId as string);
 
     if (!user) {
       return res.sendStatus(400);
     }
 
-    await user.updateOne({ username });
+    user.username = username;
+    const updatedUser = await user.save();
 
-    return res.status(200).json(user).end();
+    return res.status(200).json(updatedUser).end();
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(403);
+  }
+};
+
+export const updatePassword = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { userId } = req.params;
+    const { oldPassword, password } = req.body;
+
+    if (!userId || !password || !oldPassword) {
+      return res.sendStatus(400);
+    }
+
+    const user: IUserWithAuth | null = await getUserById(
+      userId as string,
+    ).select("authentication");
+
+    if (!user) {
+      return res.sendStatus(400);
+    }
+
+    const newSalt = random();
+    const hashedPassword = hashPassword(newSalt, password);
+    const hashedPasswordWithOldSalt = hashPassword(
+      user.authentication.salt,
+      password,
+    );
+
+    if (hashedPasswordWithOldSalt == user.authentication.password) {
+      return res
+        .status(400)
+        .json({ error: "Old password and new password are the same." })
+        .end();
+    }
+
+    user.authentication.password = hashedPassword;
+    user.authentication.salt = newSalt;
+    await user.save();
+
+    return res.status(200).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(403);

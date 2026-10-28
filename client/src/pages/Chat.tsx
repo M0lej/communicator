@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type SubmitEventHandler } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getChat, type IChat } from "../api/chats";
-import { useUserContext } from "../providers/UserProvider";
+import { useUserContext, type IUser } from "../providers/UserProvider";
 import {
   getLatestMessages,
   getOlderMessages,
@@ -14,6 +14,7 @@ import ChatBubble from "../components/ChatBubble";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import { MessageCircleDots } from "@boxicons/react";
+import { getUsersByIds } from "../api/users";
 
 function isAtPageBottom() {
   const page = document.documentElement;
@@ -95,9 +96,8 @@ export default function Chat() {
     if (!chat) {
       navigate("/");
     }
-
     setOtherUsername(
-      chat!.userNames.find((username) => username !== user.username) ??
+      chat!.userNames.find((username) => username != user.username) ??
         "other user",
     );
   }

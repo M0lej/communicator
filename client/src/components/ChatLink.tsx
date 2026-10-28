@@ -9,7 +9,7 @@ interface IChatLink {
 
 export default function ChatLink({ chat, className }: IChatLink) {
   const { user } = useUserContext();
-  const label = chat.userNames.filter(
+  const label = (chat.userNames ?? []).filter(
     (userName) => userName != user?.username,
   )[0];
 

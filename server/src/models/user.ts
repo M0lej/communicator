@@ -139,6 +139,10 @@ export const UserModel = mongoose.model<IUser>("User", UserSchema);
 
 export const getUsers = () => UserModel.find();
 
+export const _getUsersByIds = async (
+  ids: string[] | mongoose.Types.ObjectId[],
+) => await UserModel.find({ _id: { $in: ids } });
+
 export const _getUsersByUsername = (userName: string) =>
   UserModel.find({ username: { $regex: userName, $options: "i" } });
 

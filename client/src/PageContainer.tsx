@@ -75,13 +75,15 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
         >
           Friends
         </MenuLink>
-        <MenuLink
-          to={"/"}
-          className="flex w-full justify-center py-5"
-          onClick={hideMenu}
-        >
-          Account
-        </MenuLink>
+        {user != null && (
+          <MenuLink
+            to={"/account"}
+            className="flex w-full justify-center py-5"
+            onClick={hideMenu}
+          >
+            Account
+          </MenuLink>
+        )}
       </section>
       {page}
     </div>

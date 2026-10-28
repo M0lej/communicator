@@ -6,6 +6,7 @@ import {
   IUserWithAuth,
 } from "../models/user";
 import { hashPassword, hashSessionToken, random } from "../lib/encryption";
+import { get } from "lodash";
 
 export const register = async (req: express.Request, res: express.Response) => {
   try {
@@ -47,7 +48,6 @@ export const login = async (req: express.Request, res: express.Response) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      console.log("No body");
       return res.sendStatus(400);
     }
 
@@ -156,6 +156,33 @@ export const restoreSession = async (
     delete userRes.authentication;
 
     return res.status(200).json(userRes).end();
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(403);
+  }
+};
+
+export const comparePassword = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const user: IUserWithAuth | undefined = get(req, "identity");
+    const { password } = req.body;
+
+    if (!password || !user) {
+      return res.sendStatus(400);
+    }
+
+    const hashedPassword = hashPassword(
+      (user as IUserWithAuth).authentication.salt,
+      password,
+    );
+
+    return res
+      .status(200)
+      .json(hashedPassword === (user as IUserWithAuth).authentication.password)
+      .end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(403);

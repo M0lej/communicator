@@ -10,7 +10,6 @@ export interface IChat extends Document {
 
 const ChatSchema: Schema = new mongoose.Schema({
   users: [{ type: mongoose.Types.ObjectId, ref: "User", required: true }],
-  userNames: [{ type: String, required: true }],
 });
 
 const ChatModel = mongoose.model<IChat>("Chat", ChatSchema);

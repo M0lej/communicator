@@ -39,3 +39,21 @@ export async function getUserData() {
     return null;
   }
 }
+
+export async function comparePassword(userId: string, password: string) {
+  try {
+    console.log(password, userId);
+    const response = await axios({
+      method: "post",
+      url: `/api/auth/${encodeURIComponent(userId)}/compare`,
+      data: {
+        password: password,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}

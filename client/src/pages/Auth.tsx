@@ -24,7 +24,7 @@ export default function Auth() {
 
   return (
     <Form
-      className="flex flex-col gap-4 w-full justify-center items-center bg-blue-500"
+      className="flex flex-col gap-4 w-full justify-center items-center"
       action="/login"
       method="post"
       ref={formRef}
