@@ -6,7 +6,6 @@ import Auth from "./pages/Auth";
 import PageContainer from "./PageContainer";
 import { login } from "./api/auth";
 import { UserProvider } from "./providers/UserProvider";
-import Chat from "./pages/Chat";
 import Friends from "./pages/Friends";
 import { updateUser, users } from "./api/users";
 import Account from "./pages/Account";
@@ -21,10 +20,6 @@ const router = createBrowserRouter([
     path: "/login",
     element: <PageContainer page={<Auth />} />,
     action: login,
-  },
-  {
-    path: "/chat/:chatId",
-    element: <PageContainer page={<Chat />} />,
   },
   {
     path: "/friends",

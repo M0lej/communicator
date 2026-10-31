@@ -6,20 +6,20 @@ import {
   useState,
   type SubmitEventHandler,
 } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import { useUserContext } from "../providers/UserProvider";
-import { getChat, type IChat } from "../api/chats";
+import { type IChat } from "../api/chats";
 import {
   getLatestMessages,
   getOlderMessages,
   type IMessage,
 } from "../api/messages";
 import ChatBubble from "../components/ChatBubble";
-import Input from "../components/Input";
 import Button from "../components/Button";
-import { MessageCircleDots, X } from "@boxicons/react";
+import { MessageCircleDots, Send, X } from "@boxicons/react";
 import { useWSContext } from "../providers/WSProvider";
 import type { WSIncomingMessage, WSIncomingTyping } from "../api/ws";
+import TextArea from "../components/TextArea";
+import { clamp } from "../utilities/clamp";
 
 function isAtPageBottom() {
   const page = document.documentElement;
@@ -56,6 +56,8 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
     const [messagesStartIndexId, setMsgsStartIndexId] = useState(0);
     const isTypingRef = useRef(false);
     const shouldScrollAfterTypingChangeRef = useRef(false);
+
+    const [textAreaRows, setTextAreaRows] = useState(1);
 
     useEffect(() => {
       if (messagesStartIndexId > 0) {
@@ -200,6 +202,12 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
       }
     }
 
+    function onInputChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+      setTextAreaRows(
+        clamp(event.currentTarget.value.split("\n").length, 1, 6),
+      );
+    }
+
     if (!chat) return null;
 
     return (
@@ -231,8 +239,7 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
           })}
           {isTyping && (
             <p className="flex mt-2 text-gray-500 animate-pulse">
-              {otherUsername}
-              is typing
+              {otherUsername} is typing
               <MessageCircleDots className="fill-gray-500 ml-2" />
             </p>
           )}
@@ -240,20 +247,26 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
         </div>
 
         <form
-          className="w-full bg-red-200 bottom-0 h-15 grid grid-cols-[1fr_auto] p-2 gap-2"
+          className="w-full bottom-0 h-fit grid grid-cols-[1fr_auto] p-2 gap-2"
           onSubmit={sendMessage}
         >
-          <Input
-            type="text"
+          <TextArea
             placeholder="message..."
-            className="h-full "
+            className="h-fit"
             name="content"
             id="content"
+            rows={textAreaRows}
             onFocus={onInputFocus}
             onBlur={onInputBlur}
+            onChange={onInputChange}
+            style={{ resize: "none" }}
           />
-          <Button className="h-full w-30" type="submit">
+          <Button
+            className="h-full flex items-center gap-2 text-blue-500"
+            type="submit"
+          >
             Send
+            <Send className="fill-blue-500" />
           </Button>
         </form>
       </>

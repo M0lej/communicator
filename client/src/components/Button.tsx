@@ -14,7 +14,6 @@ export default function Button({
     <button
       {...ButtonProps}
       className={`
-        bg-red-400
         ${className}
         rounded-lg
         py-2
