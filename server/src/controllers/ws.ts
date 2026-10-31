@@ -33,7 +33,6 @@ export const WSHandler = async (ws: WebSocket, req: express.Request) => {
     if (!activeUsers.get(userId as string)) {
       activeUsers.set(userId as string, ws);
     }
-    console.log(activeUsers);
     ws.on("close", async () => {
       activeUsers.delete(userId as string);
     });

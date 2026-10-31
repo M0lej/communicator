@@ -140,7 +140,6 @@ export default function Friends() {
   async function openChat(friendUserId: string) {
     if (!user) return;
 
-    console.log("open");
     const existingChat = await getChatByOtherId(friendUserId);
 
     if (!existingChat) {

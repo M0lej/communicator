@@ -41,7 +41,6 @@ export class WSService {
   sendMessage(chatId: string, receiver: string, content: string) {
     if (!chatId || !receiver || !content) return;
 
-    console.log(this._ws, this._ws.readyState === WebSocket.OPEN);
     if (this._ws && this._ws.readyState === WebSocket.OPEN) {
       this._ws.send(
         JSON.stringify({

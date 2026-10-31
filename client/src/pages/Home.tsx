@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserContext } from "../providers/UserProvider";
 import { getChats, type IChat, type IChatWithTypingInfo } from "../api/chats";
 import ChatLink from "../components/ChatLink";
 import { useWSContext } from "../providers/WSProvider";
 import type { WSIncomingMessage, WSIncomingTyping } from "../api/ws";
+import Chat, { type IChatMethodsRef } from "./Chat";
 
 export default function Home() {
   const [chats, setChats] = useState<IChatWithTypingInfo[]>([]);
+  const [selectedChat, setSelectedChat] = useState<IChat | null>(null);
+  const selectedChatMethodsRef = useRef<IChatMethodsRef | null>(null);
   const { user } = useUserContext();
-  const { service, setService } = useWSContext();
+  const { service } = useWSContext();
 
   useEffect(() => {
     if (!service) {
@@ -48,9 +51,11 @@ export default function Home() {
       switch (data.type) {
         case "MESSAGE":
           updateChatsLatestMessage(data);
+          selectedChatMethodsRef.current?.receiveNewMessage(data);
           break;
         case "TYPING":
           updateChatsIsTypingStatus(data);
+          selectedChatMethodsRef.current?.receiveNewTypingStatus(data);
           break;
       }
     },
@@ -77,13 +82,32 @@ export default function Home() {
     );
   }
 
+  function hideChat() {
+    setSelectedChat(null);
+  }
+
   return (
     <>
-      <section className="w-full flex flex-col mt-10 gap-2">
-        {chats.map((chat, i) => (
-          <ChatLink chat={chat} key={i} />
-        ))}
-      </section>
+      <div className="w-full h-screen flex">
+        <section className="w-[50%] flex flex-col">
+          {chats.map((chat, i) => (
+            <ChatLink
+              chat={chat}
+              key={i}
+              onClick={() => setSelectedChat(chat)}
+            />
+          ))}
+        </section>
+        {selectedChat && (
+          <section className="w-[50%] h-full flex flex-col min-h-0 border-l border-gray-300 ">
+            <Chat
+              chat={selectedChat}
+              ref={selectedChatMethodsRef}
+              hideChat={hideChat}
+            />
+          </section>
+        )}
+      </div>
     </>
   );
 }

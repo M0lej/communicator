@@ -2,14 +2,10 @@ import { Search } from "@boxicons/react";
 import Input from "../components/Input";
 import { Form, useActionData } from "react-router-dom";
 import type { IUser } from "../providers/UserProvider";
-import { useEffect } from "react";
 
 export default function FriendsFind() {
   const response = useActionData<IUser[] | null>();
 
-  useEffect(() => {
-    console.log(response);
-  }, [response]);
   return (
     <div className="h-full w-full bg-blue-500">
       <Form

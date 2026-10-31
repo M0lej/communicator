@@ -42,7 +42,6 @@ export async function getUserData() {
 
 export async function comparePassword(userId: string, password: string) {
   try {
-    console.log(password, userId);
     const response = await axios({
       method: "post",
       url: `/api/auth/${encodeURIComponent(userId)}/compare`,

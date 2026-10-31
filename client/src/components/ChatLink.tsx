@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 import type { IChatWithTypingInfo } from "../api/chats";
 import { useUserContext } from "../providers/UserProvider";
 import type { IMessage } from "../api/messages";
+import type { ButtonHTMLAttributes } from "react";
 
-interface IChatLink {
+interface IChatLink extends ButtonHTMLAttributes<HTMLButtonElement> {
   chat: IChatWithTypingInfo;
   className?: string;
   latestMessage?: IMessage;
@@ -13,6 +14,7 @@ export default function ChatLink({
   chat,
   className,
   latestMessage,
+  ...props
 }: IChatLink) {
   const { user } = useUserContext();
 
@@ -25,9 +27,9 @@ export default function ChatLink({
   }
 
   return (
-    <Link
-      to={`/chat/${chat._id}`}
+    <button
       className={`py-4 px-8 rounded-l h-fit flex items-center gap-4 hover:bg-gray-200 transition-colors ${className}`}
+      {...props}
     >
       <div className="h-10 aspect-square rounded-full bg-gray-400" />
       <div className="flex flex-col">
@@ -43,6 +45,6 @@ export default function ChatLink({
           )}
         </p>
       </div>
-    </Link>
+    </button>
   );
 }

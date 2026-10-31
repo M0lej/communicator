@@ -5,9 +5,11 @@ import { getUserData } from "./api/auth";
 import { useUserContext } from "./providers/UserProvider";
 import { useWSContext } from "./providers/WSProvider";
 import { WSService } from "./api/ws";
+import { useNavigate } from "react-router-dom";
 
 export default function PageContainer({ page }: { page?: ReactNode }) {
   const [expanded, setExpanded] = useState<boolean>(false);
+  const navigate = useNavigate();
   const { user, setUser } = useUserContext();
   const [userLoaded, setUserLoaded] = useState(false);
   const { service, setService } = useWSContext();
@@ -30,6 +32,12 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
 
   async function getUser() {
     const res = await getUserData();
+
+    if (!res) {
+      navigate("/login");
+      return;
+    }
+
     setUser(res);
     setUserLoaded(true);
   }
@@ -100,13 +108,35 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
         `}
       >
         {user !== null && <h1>Logged in as {user.username}</h1>}
-        <MenuLink
-          to={"/"}
-          className="flex w-full justify-center py-5"
-          onClick={hideMenu}
-        >
-          Chats
-        </MenuLink>
+
+        {user !== null && (
+          <>
+            <MenuLink
+              to={"/"}
+              className="flex w-full justify-center py-5"
+              onClick={hideMenu}
+            >
+              Chats
+            </MenuLink>
+            <MenuLink
+              to={"/friends"}
+              className="flex w-full justify-center py-5"
+              onClick={hideMenu}
+            >
+              Friends
+            </MenuLink>
+            {user != null && (
+              <MenuLink
+                to={"/account"}
+                className="flex w-full justify-center py-5"
+                onClick={hideMenu}
+              >
+                Account
+              </MenuLink>
+            )}
+          </>
+        )}
+
         {user === null && (
           <MenuLink
             to={"/login"}
@@ -114,22 +144,6 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
             onClick={hideMenu}
           >
             Login
-          </MenuLink>
-        )}
-        <MenuLink
-          to={"/friends"}
-          className="flex w-full justify-center py-5"
-          onClick={hideMenu}
-        >
-          Friends
-        </MenuLink>
-        {user != null && (
-          <MenuLink
-            to={"/account"}
-            className="flex w-full justify-center py-5"
-            onClick={hideMenu}
-          >
-            Account
           </MenuLink>
         )}
       </section>
