@@ -205,7 +205,10 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
     return (
       <>
         <div className="w-full h-16 flex items-center justify-center relative">
-          <button className="left-6 absolute cursor-pointer" onClick={hideChat}>
+          <button
+            className="sm:left-6 max-sm:right-6 max-sm absolute cursor-pointer"
+            onClick={hideChat}
+          >
             <X />
           </button>
           {otherUsername}

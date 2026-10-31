@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import type { IChatWithTypingInfo } from "../api/chats";
 import { useUserContext } from "../providers/UserProvider";
 import type { IMessage } from "../api/messages";
@@ -28,7 +27,7 @@ export default function ChatLink({
 
   return (
     <button
-      className={`py-4 px-8 rounded-l h-fit flex items-center gap-4 hover:bg-gray-200 transition-colors ${className}`}
+      className={`py-4 px-8 rounded-l h-fit flex items-center gap-4 hover:bg-gray-200 transition-colors cursor-pointer ${className}`}
       {...props}
     >
       <div className="h-10 aspect-square rounded-full bg-gray-400" />

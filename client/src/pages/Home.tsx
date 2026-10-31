@@ -5,6 +5,7 @@ import ChatLink from "../components/ChatLink";
 import { useWSContext } from "../providers/WSProvider";
 import type { WSIncomingMessage, WSIncomingTyping } from "../api/ws";
 import Chat, { type IChatMethodsRef } from "./Chat";
+import { clamp } from "../utilities/clamp";
 
 export default function Home() {
   const [chats, setChats] = useState<IChatWithTypingInfo[]>([]);
@@ -12,6 +13,8 @@ export default function Home() {
   const selectedChatMethodsRef = useRef<IChatMethodsRef | null>(null);
   const { user } = useUserContext();
   const { service } = useWSContext();
+
+  const [chatWidth, setChatWidth] = useState<number | null>();
 
   useEffect(() => {
     if (!service) {
@@ -86,10 +89,28 @@ export default function Home() {
     setSelectedChat(null);
   }
 
+  function onChatResizeDrag(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+
+    if (event.clientX == 0) {
+      return;
+    }
+
+    const newWidth = clamp(
+      window.outerWidth - event.clientX,
+      window.outerWidth / 4,
+      (window.outerWidth * 3) / 4,
+    );
+    setChatWidth(newWidth);
+  }
+
   return (
     <>
       <div className="w-full h-screen flex">
-        <section className="w-[50%] flex flex-col">
+        <section
+          className={`${selectedChat ? !chatWidth && "w-[50%] max-sm:w-0 max-sm:hidden" : "w-full"} flex flex-col py-15`}
+          style={{ width: `${window.outerWidth - chatWidth!}px` }}
+        >
           {chats.map((chat, i) => (
             <ChatLink
               chat={chat}
@@ -99,7 +120,14 @@ export default function Home() {
           ))}
         </section>
         {selectedChat && (
-          <section className="w-[50%] h-full flex flex-col min-h-0 border-l border-gray-300 ">
+          <section
+            className={`${!chatWidth && "w-[50%]"} max-sm:w-full h-full flex flex-col min-h-0 border-l border-gray-300`}
+            style={{ width: `${chatWidth}px` }}
+          >
+            <div
+              className="h-full w-10 -ml-5 absolute z-0 cursor-col-resize max-md:hidden"
+              onDrag={onChatResizeDrag}
+            />
             <Chat
               chat={selectedChat}
               ref={selectedChatMethodsRef}
