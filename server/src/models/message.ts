@@ -36,8 +36,13 @@ export const MessageModel = mongoose.model<IMessage>("Message", MessageSchema);
 export const getMessageById = async (id: string) =>
   await MessageModel.findOne({ id });
 
-export const getLatestMessagesByChatId = async (chatId: string) =>
-  await MessageModel.find({ chatId }).sort({ createdAt: -1 }).limit(50);
+export const getLatestMessagesByChatId = async (
+  chatId: string | mongoose.Types.ObjectId,
+) => await MessageModel.find({ chatId }).sort({ createdAt: -1 }).limit(50);
+
+export const getLatestMessageByChatId = async (
+  chatId: string | mongoose.Types.ObjectId,
+) => await MessageModel.findOne({ chatId }).sort({ createdAt: -1 });
 
 export const getOlderMessagesByChatId = async (
   chatId: string,

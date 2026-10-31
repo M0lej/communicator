@@ -1,9 +1,33 @@
 import axios from "axios";
+import type { IMessage } from "./messages";
 
 export interface IChat {
   _id: string;
   users: string[];
   userNames: string[];
+  latestMessage: IMessage;
+}
+
+export interface IChatWithTypingInfo extends IChat {
+  isTyping: boolean;
+}
+
+export async function getOlderMessages(
+  userId: string,
+  chatId: string,
+  startIndex: number,
+) {
+  try {
+    const response = await axios({
+      method: "GET",
+      url: `/api/messages/${userId}/${chatId}/${startIndex}`,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 }
 
 export async function getChats(userId: string) {

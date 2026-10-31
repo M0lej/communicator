@@ -8,6 +8,7 @@ import {
 } from "../models/chat";
 import { _getUsersByIds, getUserById, IUser } from "../models/user";
 import { get } from "lodash";
+import { getLatestMessageByChatId } from "../models/message";
 
 export const getChats = async (req: express.Request, res: express.Response) => {
   try {
@@ -19,18 +20,20 @@ export const getChats = async (req: express.Request, res: express.Response) => {
 
     const chats = (await getChatsByUserId(userId as string)) ?? [];
 
-    const chatsWithUserNames = await Promise.all(
+    const expandedChatsObjects = await Promise.all(
       chats.map(async (chat: IChat) => {
         const chatUsers: IUser[] = (await _getUsersByIds(chat.users)) ?? [];
+        const latestMessage = await getLatestMessageByChatId(chat._id);
 
         return {
           ...chat.toObject(),
           userNames: chatUsers.map((chatUser) => chatUser.username),
+          latestMessage,
         };
       }),
     );
 
-    return res.status(200).json(chatsWithUserNames).end();
+    return res.status(200).json(expandedChatsObjects).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);

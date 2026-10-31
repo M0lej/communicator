@@ -3,23 +3,71 @@ import MenuLink from "./components/MenuLink";
 import { useEffect, useState, type ReactNode } from "react";
 import { getUserData } from "./api/auth";
 import { useUserContext } from "./providers/UserProvider";
+import { useWSContext } from "./providers/WSProvider";
+import { WSService } from "./api/ws";
 
 export default function PageContainer({ page }: { page?: ReactNode }) {
   const [expanded, setExpanded] = useState<boolean>(false);
   const { user, setUser } = useUserContext();
+  const [userLoaded, setUserLoaded] = useState(false);
+  const { service, setService } = useWSContext();
   const hideMenu = () => setExpanded(false);
 
   useEffect(() => {
     getUser();
   }, []);
 
+  useEffect(() => {
+    connectToWS();
+
+    return () => {
+      service?.closeConnection();
+      setService((currentService) =>
+        currentService === service ? null : currentService,
+      );
+    };
+  }, [user, setService]);
+
   async function getUser() {
     const res = await getUserData();
     setUser(res);
+    setUserLoaded(true);
+  }
+
+  function connectToWS() {
+    if (!user) {
+      setService(null);
+      return;
+    }
+
+    const wsService = new WSService(user._id);
+    wsService.onClose = receiveWSClose;
+    wsService.onError = receiveWSClose;
+
+    setService(wsService);
+  }
+
+  function receiveWSClose() {
+    setService(null);
   }
 
   return (
     <div className="w-full h-screen max-sm:flex flex-col grid grid-cols-[auto_1fr] grid-rows-1">
+      {!service && userLoaded && (
+        <div className="absolute w-full h-full backdrop-blur-md z-10 flex flex-col justify-center items-center">
+          <p>
+            <b>Oops!</b>
+            <br />
+            Looks like you've lost connection to the server...
+          </p>
+          <button
+            className="my-4 bg-blue-400 text-white px-4 py-2 rounded-lg cursor-pointer"
+            onClick={connectToWS}
+          >
+            Reconnect
+          </button>
+        </div>
+      )}
       <button
         className={`
           fixed 

@@ -1,20 +1,24 @@
-import { useEffect, useRef, useState, type SubmitEventHandler } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type SubmitEventHandler,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getChat, type IChat } from "../api/chats";
-import { useUserContext, type IUser } from "../providers/UserProvider";
+import { useUserContext } from "../providers/UserProvider";
 import {
   getLatestMessages,
   getOlderMessages,
-  MessagesWSService,
   type IMessage,
-  type WSmessages,
-  type WStyping,
 } from "../api/messages";
 import ChatBubble from "../components/ChatBubble";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import { MessageCircleDots } from "@boxicons/react";
-import { getUsersByIds } from "../api/users";
+import { useWSContext } from "../providers/WSProvider";
+import type { WSIncomingMessage, WSIncomingTyping } from "../api/ws";
 
 function isAtPageBottom() {
   const page = document.documentElement;
@@ -26,16 +30,17 @@ function isAtPageBottom() {
 export default function Chat() {
   const { user } = useUserContext();
   const [otherUsername, setOtherUsername] = useState<string>("other user");
+  const [otherUserId, setOtherUserId] = useState<string | null>(null);
 
   const { chatId } = useParams();
   const navigate = useNavigate();
+  const { service: wsService } = useWSContext();
   const [messages, setMessages] = useState<IMessage[]>([]);
 
   const chatRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const firstMessagesRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  const [msgService, setMsgService] = useState<MessagesWSService | null>(null);
   const [isTyping, setTyping] = useState(false);
   const [messagesStartIndexId, setMsgsStartIndexId] = useState(0);
   const isTypingRef = useRef(false);
@@ -75,15 +80,7 @@ export default function Chat() {
   useEffect(() => {
     validateChatExistence();
     getMessages();
-
-    if (user && chatId) {
-      setMsgService(new MessagesWSService(receiveUpdates, user._id, chatId));
-    }
-  }, [chatId, user]);
-
-  useEffect(() => {
-    return () => msgService?.closeConnection();
-  }, [msgService]);
+  }, [wsService]);
 
   async function validateChatExistence() {
     if (!user || !chatId || user._id.length != 24 || chatId.length != 24) {
@@ -95,30 +92,53 @@ export default function Chat() {
 
     if (!chat) {
       navigate("/");
+      return;
     }
+
+    setOtherUserId(chat.users.find((id) => id !== user._id) ?? null);
     setOtherUsername(
-      chat!.userNames.find((username) => username != user.username) ??
+      chat.userNames.find((username) => username != user.username) ??
         "other user",
     );
   }
 
-  function receiveUpdates(event: MessageEvent) {
-    if (!event.data) return;
-    const data: WSmessages | WStyping = JSON.parse(event.data);
+  const receiveUpdates = useCallback(
+    (event: MessageEvent) => {
+      if (!event.data) return;
+      const data: WSIncomingMessage | WSIncomingTyping = JSON.parse(event.data);
 
-    switch (data.type) {
-      case "messages":
-        setMessages(data.content.reverse());
-        break;
-      case "typing":
-        if (isTypingRef.current === data.value) break;
+      switch (data.type) {
+        case "MESSAGE":
+          if (data.message.chatId !== chatId) return;
+          setMessages((currentMessages) =>
+            currentMessages.some((message) => message._id === data.message._id)
+              ? currentMessages
+              : [...currentMessages, data.message],
+          );
+          break;
+        case "TYPING":
+          if (data.content.chatId !== chatId) return;
+          if (isTypingRef.current === data.content.content) break;
 
-        isTypingRef.current = data.value;
-        shouldScrollAfterTypingChangeRef.current = isAtPageBottom();
-        setTyping(data.value);
-        break;
-    }
-  }
+          isTypingRef.current = data.content.content;
+          shouldScrollAfterTypingChangeRef.current = isAtPageBottom();
+          setTyping(data.content.content);
+          break;
+      }
+    },
+    [chatId],
+  );
+
+  useEffect(() => {
+    if (!wsService) return;
+
+    wsService.onMessage = receiveUpdates;
+    return () => {
+      if (wsService.onMessage === receiveUpdates) {
+        wsService.onMessage = null;
+      }
+    };
+  }, [wsService, receiveUpdates]);
 
   async function getMessages(startIndex = 0) {
     if (!user || !chatId) return;
@@ -163,20 +183,23 @@ export default function Chat() {
 
     const content = formData.get("content");
 
-    if (!msgService || !content) return;
-    msgService.sendMessage(content as string);
+    if (!wsService || !chatId || !otherUserId || typeof content !== "string") {
+      return;
+    }
+
+    wsService.sendMessage(chatId, otherUserId, content);
 
     event.currentTarget.reset();
   };
 
   function onInputFocus() {
-    if (!msgService) return;
-    msgService.notifyTyping(true);
+    if (!wsService || !chatId || !otherUserId) return;
+    wsService.notifyTyping(chatId, otherUserId, true);
   }
 
   function onInputBlur() {
-    if (!msgService) return;
-    msgService.notifyTyping(false);
+    if (!wsService || !chatId || !otherUserId) return;
+    wsService.notifyTyping(chatId, otherUserId, false);
   }
 
   function addSectionFirstMessageRef(el: HTMLDivElement | null) {

@@ -12,7 +12,8 @@ export default defineConfig({
       "/api/users": "http://localhost:8080",
       "/api/chats": "http://localhost:8080",
       "/api/chat": "http://localhost:8080",
-      "/api/messages": {
+      "/api/messages": "http://localhost:8080",
+      "/api/ws": {
         target: "http://localhost:8080",
         ws: true,
       },

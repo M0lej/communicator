@@ -10,6 +10,7 @@ import Chat from "./pages/Chat";
 import Friends from "./pages/Friends";
 import { updateUser, users } from "./api/users";
 import Account from "./pages/Account";
+import { WSProvider } from "./providers/WSProvider";
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <UserProvider>
-    <RouterProvider router={router} />
+    <WSProvider>
+      <RouterProvider router={router} />
+    </WSProvider>
   </UserProvider>,
 );
