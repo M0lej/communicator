@@ -5,6 +5,7 @@ import usersRouter from "./users";
 import { chatsRouter } from "./chats";
 import { messagesRouter } from "./messages";
 import wsRouter from "./ws";
+import { avatarRouter } from "./avatar";
 
 export default (ws: expressWs.Instance): express.Router => {
   const router = express.Router();
@@ -14,5 +15,6 @@ export default (ws: expressWs.Instance): express.Router => {
   chatsRouter(router);
   wsRouter(router);
   messagesRouter(router);
+  avatarRouter(router);
   return router;
 };

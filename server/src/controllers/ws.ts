@@ -1,6 +1,8 @@
 import WebSocket from "ws";
 import { createNewMessage } from "../models/message";
 import express from "express";
+import { getUserById, getUserBySessionToken, IUser } from "../models/user";
+import mongoose from "mongoose";
 
 interface IWSMessage {
   type: "MESSAGE";
@@ -20,7 +22,16 @@ interface IWSUserTyping {
   };
 }
 
-const activeUsers = new Map<string, WebSocket>();
+interface IWSActive {
+  type: "ACTIVE";
+  content: {
+    receiver: string;
+    sender: IUser;
+    content: boolean;
+  };
+}
+
+export const activeUsers = new Map<string, WebSocket>();
 
 export const WSHandler = async (ws: WebSocket, req: express.Request) => {
   try {
@@ -32,12 +43,13 @@ export const WSHandler = async (ws: WebSocket, req: express.Request) => {
 
     if (!activeUsers.get(userId as string)) {
       activeUsers.set(userId as string, ws);
+      await broadcastStatusChange(userId as string, true);
     }
+
     ws.on("close", async () => {
+      await broadcastStatusChange(userId as string, false);
       activeUsers.delete(userId as string);
     });
-
-    // const chats: IChat[] = await getChatsByUserId(userId as string);
 
     ws.on("message", async (data: string) => {
       if (!data) {
@@ -45,7 +57,8 @@ export const WSHandler = async (ws: WebSocket, req: express.Request) => {
         return;
       }
 
-      const parsedData: IWSMessage | IWSUserTyping = JSON.parse(data);
+      const parsedData: IWSMessage | IWSUserTyping | IWSActive =
+        JSON.parse(data);
       const receiver = activeUsers.get(parsedData.content.receiver);
 
       switch (parsedData.type) {
@@ -73,10 +86,12 @@ export const WSHandler = async (ws: WebSocket, req: express.Request) => {
             );
           }
           break;
+        case "ACTIVE":
         case "TYPING":
           if (receiver) {
             receiver.send(data);
           }
+          break;
       }
     });
   } catch (error) {
@@ -84,3 +99,37 @@ export const WSHandler = async (ws: WebSocket, req: express.Request) => {
     ws.close();
   }
 };
+
+async function broadcastStatusChange(
+  userId: string,
+  status: boolean, // true - active / false - offline
+) {
+  try {
+    const user = await getUserById(userId);
+
+    if (!user) {
+      console.error(
+        `Couldn't broadcast status change to friends of user with id ${userId} | user doesn't exist`,
+      );
+      return;
+    }
+
+    activeUsers.entries().forEach(([otherId, otherWs]) => {
+      if (user.friends.includes(new mongoose.Types.ObjectId(otherId))) {
+        otherWs.send(
+          JSON.stringify({
+            type: "ACTIVE",
+            content: {
+              receiver: otherId,
+              sender: user,
+              content: status,
+            },
+          }),
+        );
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return;
+  }
+}

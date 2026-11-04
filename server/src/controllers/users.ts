@@ -14,6 +14,7 @@ import {
 } from "../models/user";
 import { get } from "lodash";
 import { hashPassword, random } from "../lib/encryption";
+import { activeUsers } from "./ws";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -173,13 +174,48 @@ export const getFriends = async (
   res: express.Response,
 ) => {
   try {
-    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+    const userId: string = get(req, "identity._id") as unknown as string;
 
-    if (!currentUser) {
+    if (!userId) {
       return res.sendStatus(400);
     }
 
-    const users: IUser[] = (await _getFriends(currentUser)) ?? [];
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const users: IUser[] = (await _getFriends(user)) ?? [];
+
+    return res.status(200).json(users);
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const getActiveFriends = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const userId: string = get(req, "identity._id") as unknown as string;
+
+    if (!userId) {
+      return res.sendStatus(400);
+    }
+
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const users: IUser[] =
+      (await _getFriends(user)).filter((friend) =>
+        activeUsers.has(friend._id.toString()),
+      ) ?? [];
 
     return res.status(200).json(users);
   } catch (error) {
@@ -193,13 +229,19 @@ export const getSentFriendRequests = async (
   res: express.Response,
 ) => {
   try {
-    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+    const userId: string = get(req, "identity._id") as unknown as string;
 
-    if (!currentUser) {
+    if (!userId) {
       return res.sendStatus(400);
     }
 
-    const users: IUser[] = (await _getSentFriendRequests(currentUser)) ?? [];
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const users: IUser[] = (await _getSentFriendRequests(user)) ?? [];
 
     return res.status(200).json(users);
   } catch (error) {
@@ -213,13 +255,19 @@ export const getPendingFriendRequests = async (
   res: express.Response,
 ) => {
   try {
-    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+    const userId: string = get(req, "identity._id") as unknown as string;
 
-    if (!currentUser) {
+    if (!userId) {
       return res.sendStatus(400);
     }
 
-    const users: IUser[] = (await _getPendingFriendRequests(currentUser)) ?? [];
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const users: IUser[] = (await _getPendingFriendRequests(user)) ?? [];
 
     return res.status(200).json(users);
   } catch (error) {

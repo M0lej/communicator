@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useUserContext } from "../providers/UserProvider";
+import { useUserContext, type IUser } from "../providers/UserProvider";
 import { getChats, type IChat, type IChatWithTypingInfo } from "../api/chats";
 import ChatLink from "../components/ChatLink";
 import { useWSContext } from "../providers/WSProvider";
-import type { WSIncomingMessage, WSIncomingTyping } from "../api/ws";
+import type {
+  IWSIncomingActive,
+  IWSIncomingMessage,
+  IWSIncomingTyping,
+} from "../api/ws";
 import Chat, { type IChatMethodsRef } from "./Chat";
 import { clamp } from "../utilities/clamp";
+import { getActiveFriends } from "../api/users";
 
 export default function Home() {
   const [chats, setChats] = useState<IChatWithTypingInfo[]>([]);
@@ -13,7 +18,7 @@ export default function Home() {
   const selectedChatMethodsRef = useRef<IChatMethodsRef | null>(null);
   const { user } = useUserContext();
   const { service } = useWSContext();
-
+  const [activeUsers, setActiveUsers] = useState<IUser[]>([]);
   const [chatWidth, setChatWidth] = useState<number | null>();
 
   useEffect(() => {
@@ -31,6 +36,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchChats();
+    fetchActiveFriends();
   }, [user]);
 
   async function fetchChats() {
@@ -43,13 +49,22 @@ export default function Home() {
     }
   }
 
+  async function fetchActiveFriends() {
+    const res: IUser[] = await getActiveFriends();
+
+    if (res) {
+      setActiveUsers(res);
+    }
+  }
+
   const receiveUpdates = useCallback(
     (event: MessageEvent) => {
       if (!event.data) {
         return;
       }
 
-      const data: WSIncomingMessage | WSIncomingTyping = JSON.parse(event.data);
+      const data: IWSIncomingMessage | IWSIncomingTyping | IWSIncomingActive =
+        JSON.parse(event.data);
 
       switch (data.type) {
         case "MESSAGE":
@@ -60,12 +75,15 @@ export default function Home() {
           updateChatsIsTypingStatus(data);
           selectedChatMethodsRef.current?.receiveNewTypingStatus(data);
           break;
+        case "ACTIVE":
+          updateActiveUsers(data);
+          break;
       }
     },
     [user],
   );
 
-  function updateChatsLatestMessage(data: WSIncomingMessage) {
+  function updateChatsLatestMessage(data: IWSIncomingMessage) {
     setChats((chats) =>
       chats.map((chat) =>
         chat._id === data.message.chatId
@@ -75,7 +93,7 @@ export default function Home() {
     );
   }
 
-  function updateChatsIsTypingStatus(data: WSIncomingTyping) {
+  function updateChatsIsTypingStatus(data: IWSIncomingTyping) {
     setChats((chats) =>
       chats.map((chat) =>
         chat._id === data.content.chatId
@@ -83,6 +101,18 @@ export default function Home() {
           : chat,
       ),
     );
+  }
+
+  function updateActiveUsers(data: IWSIncomingActive) {
+    const status = data.content.content;
+
+    if (status) {
+      setActiveUsers((users) => [...users, data.content.sender]);
+    } else {
+      setActiveUsers((users) =>
+        users.filter((otherUser) => otherUser._id === data.content.receiver),
+      );
+    }
   }
 
   function hideChat() {
@@ -105,37 +135,39 @@ export default function Home() {
   }
 
   return (
-    <>
-      <div className="w-full h-screen flex">
-        <section
-          className={`${selectedChat ? !chatWidth && "w-[50%] max-sm:w-0 max-sm:hidden" : "w-full"} flex flex-col py-15`}
-          style={{ width: `${window.outerWidth - chatWidth!}px` }}
-        >
-          {chats.map((chat, i) => (
-            <ChatLink
-              chat={chat}
-              key={i}
-              onClick={() => setSelectedChat(chat)}
-            />
+    <div className="w-full h-screen flex flex-col pt-15">
+      <section>
+        Active users:
+        <div className="flex gap-2">
+          {activeUsers.map((activeUser) => (
+            <div>{activeUser.username}</div>
           ))}
+        </div>
+      </section>
+      <section
+        className={`${selectedChat ? !chatWidth && "w-[50%] max-sm:w-0 max-sm:hidden" : "w-full"} flex flex-col`}
+        style={{ width: `${window.outerWidth - chatWidth!}px` }}
+      >
+        {chats.map((chat, i) => (
+          <ChatLink chat={chat} key={i} onClick={() => setSelectedChat(chat)} />
+        ))}
+      </section>
+      {selectedChat && (
+        <section
+          className={`${!chatWidth && "w-[50%]"} max-sm:w-full h-full flex flex-col min-h-0 border-l border-gray-300`}
+          style={{ width: `${chatWidth}px` }}
+        >
+          <div
+            className="h-full w-10 -ml-5 absolute z-0 cursor-col-resize max-md:hidden"
+            onDrag={onChatResizeDrag}
+          />
+          <Chat
+            chat={selectedChat}
+            ref={selectedChatMethodsRef}
+            hideChat={hideChat}
+          />
         </section>
-        {selectedChat && (
-          <section
-            className={`${!chatWidth && "w-[50%]"} max-sm:w-full h-full flex flex-col min-h-0 border-l border-gray-300`}
-            style={{ width: `${chatWidth}px` }}
-          >
-            <div
-              className="h-full w-10 -ml-5 absolute z-0 cursor-col-resize max-md:hidden"
-              onDrag={onChatResizeDrag}
-            />
-            <Chat
-              chat={selectedChat}
-              ref={selectedChatMethodsRef}
-              hideChat={hideChat}
-            />
-          </section>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }

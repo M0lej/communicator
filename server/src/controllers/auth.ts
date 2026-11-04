@@ -7,10 +7,14 @@ import {
 } from "../models/user";
 import { hashPassword, hashSessionToken, random } from "../lib/encryption";
 import { get } from "lodash";
+import { uploadAvatarFromBuffer } from "../lib/avatar";
+import { randomUUID } from "node:crypto";
 
 export const register = async (req: express.Request, res: express.Response) => {
   try {
     const { username, email, password } = req.body;
+
+    const avatar = req.file;
 
     if (!username || !email || !password) {
       return res.sendStatus(400);
@@ -25,9 +29,17 @@ export const register = async (req: express.Request, res: express.Response) => {
     const salt = random();
     const encryptedPassword = hashPassword(salt, password);
 
+    const avatarFileId =
+      avatar &&
+      (await uploadAvatarFromBuffer(avatar.buffer, randomUUID(), {
+        mimeType: avatar.mimetype,
+        uploadedAt: new Date(),
+      }));
+
     const user = await createUser({
       username,
       email,
+      avatarFileId,
       authentication: {
         salt,
         password: encryptedPassword,

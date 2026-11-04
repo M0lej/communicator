@@ -1,18 +1,28 @@
+import type { IUser } from "../providers/UserProvider";
 import type { IMessage } from "./messages";
 
-export type WSIncomingMessage = {
+export interface IWSIncomingMessage {
   type: "MESSAGE";
   message: IMessage;
-};
+}
 
-export type WSIncomingTyping = {
+export interface IWSIncomingTyping {
   type: "TYPING";
   content: {
     chatId: string;
     receiver: string;
     content: boolean;
   };
-};
+}
+
+export interface IWSIncomingActive {
+  type: "ACTIVE";
+  content: {
+    receiver: string;
+    sender: IUser;
+    content: boolean;
+  };
+}
 
 export class WSService {
   private _ws: WebSocket;

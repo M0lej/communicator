@@ -13,6 +13,7 @@ import {
   getPendingFriendRequests,
   getUsersByIds,
   updatePassword,
+  getActiveFriends,
 } from "../controllers/users";
 import { isAuthenticated, isOwner } from "../middlewares/auth";
 
@@ -29,6 +30,7 @@ export default function usersRouter(router: express.Router) {
     updatePassword,
   );
   router.get("/users/me/friends", isAuthenticated, getFriends);
+  router.get("/users/me/friends/active", isAuthenticated, getActiveFriends);
   router.get(
     "/users/me/friends/requests/sent",
     isAuthenticated,
