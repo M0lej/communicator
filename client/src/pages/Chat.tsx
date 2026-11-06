@@ -17,7 +17,7 @@ import ChatBubble from "../components/ChatBubble";
 import Button from "../components/Button";
 import { MessageCircleDots, Send, X } from "@boxicons/react";
 import { useWSContext } from "../providers/WSProvider";
-import type { WSIncomingMessage, WSIncomingTyping } from "../api/ws";
+import type { IWSIncomingMessage, IWSIncomingTyping } from "../api/ws";
 import TextArea from "../components/TextArea";
 import { clamp } from "../utilities/clamp";
 
@@ -29,8 +29,8 @@ function isAtPageBottom() {
 }
 
 export interface IChatMethodsRef {
-  receiveNewMessage: (data: WSIncomingMessage) => void;
-  receiveNewTypingStatus: (data: WSIncomingTyping) => void;
+  receiveNewMessage: (data: IWSIncomingMessage) => void;
+  receiveNewTypingStatus: (IWSIncomingMessage: IWSIncomingTyping) => void;
 }
 
 interface IChatProps {

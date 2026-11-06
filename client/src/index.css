@@ -3,15 +3,35 @@
 @theme {
   --color-baby-powder-white: #f8f7f2;
   --animate-pop-from-bottom: popFromBottom 0.2s ease-in-out forwards;
+  --animate-pop-from-right: popFromRight 0.5s ease-in-out forwards;
 
   @keyframes popFromBottom {
     from {
-      transform: translateY(100%);
+      transform: translateY(50%);
       opacity: 0;
+      scale: 0.8;
+      filter: blur(0.5rem);
     }
     to {
       transform: translateY(0%);
       opacity: 1;
+      scale: 1;
+      filter: blur(0);
+    }
+  }
+
+  @keyframes popFromRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+      scale: 0.8;
+      filter: blur(0.5rem);
+    }
+    to {
+      transform: translateX(0%);
+      opacity: 1;
+      scale: 1;
+      filter: blur(0);
     }
   }
 }

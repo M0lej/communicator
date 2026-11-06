@@ -4,38 +4,7 @@ import { useEffect, useState } from "react";
 import { Form, Link, useActionData } from "react-router-dom";
 import AccountSettingsField from "../components/AccountSettingsField";
 import Input from "../components/Input";
-
-function isUser(value: unknown): value is IUser {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "_id" in value &&
-    typeof value._id === "string" &&
-    "username" in value &&
-    typeof value.username === "string" &&
-    "email" in value &&
-    typeof value.email === "string" &&
-    "sentFriendRequests" in value &&
-    Array.isArray(value.sentFriendRequests) &&
-    "pendingFriendRequests" in value &&
-    Array.isArray(value.pendingFriendRequests) &&
-    "friends" in value &&
-    Array.isArray(value.friends)
-  );
-}
-
-interface IError {
-  error: string;
-}
-
-function isError(value: unknown): value is IError {
-  return (
-    typeof value === "object" &&
-    value != null &&
-    "error" in value &&
-    typeof value.error === "string"
-  );
-}
+import Error, { isError, isUser } from "../components/Error";
 
 export default function Account() {
   const response = useActionData<unknown>();
@@ -48,8 +17,9 @@ export default function Account() {
     toggleUserNameEditing(false);
     togglePasswordEditing(false);
 
-    if (response != null) {
+    if (response) {
       if (isUser(response)) {
+        setErrorMessage(null);
         setUser(response);
       } else if (isError(response)) {
         setErrorMessage(response.error);
@@ -160,11 +130,7 @@ export default function Account() {
                     </button>
                   </>
                 )}
-                {errorMessage && (
-                  <h2 className="w-full flex justify-center bg-red-400 text-white p-2 rounded-lg ">
-                    {errorMessage}
-                  </h2>
-                )}
+                {errorMessage && <Error message={errorMessage} />}
               </div>
             </Form>
           </AccountSettingsField>

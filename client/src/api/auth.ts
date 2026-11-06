@@ -22,6 +22,60 @@ export async function login({ request }: { request: Request }) {
     return response.data;
   } catch (error) {
     console.error(error);
+    if (axios.isAxiosError(error)) {
+      const responseData: unknown = error.response?.data;
+      if (
+        typeof responseData === "object" &&
+        responseData !== null &&
+        "error" in responseData &&
+        typeof responseData.error === "string"
+      ) {
+        return responseData;
+      }
+
+      return {
+        error: error.response
+          ? "Invalid email or password."
+          : "Unable to connect to the server.",
+      };
+    }
+
+    return {
+      error: "An unexpected error occurred while logging in.",
+    };
+  }
+}
+
+export async function register({ request }: { request: Request }) {
+  try {
+    const data = Object.fromEntries((await request.formData()).entries());
+
+    const { email, password, confirmPassword } = data;
+
+    console.log(data);
+
+    if (!email || !password || !confirmPassword) {
+      return;
+    }
+
+    if (password != confirmPassword) {
+      return {
+        error: "Passwords doesn't match.",
+      };
+    }
+
+    const response = await axios({
+      method: "POST",
+      url: "/api/auth/register",
+      data: {
+        email,
+        password,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error(error);
     return null;
   }
 }

@@ -60,7 +60,7 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
   }
 
   return (
-    <div className="w-full h-screen max-sm:flex flex-col grid grid-cols-[auto_1fr] grid-rows-1">
+    <div className="w-screen h-screen max-sm:flex flex-col grid grid-cols-[auto_1fr] grid-rows-1">
       {!service && userLoaded && (
         <div className="absolute w-full h-full backdrop-blur-md z-10 flex flex-col justify-center items-center">
           <p>

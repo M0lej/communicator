@@ -1,33 +1,32 @@
-import { Form, useActionData, useNavigate } from "react-router-dom";
+import { Form, Link, useActionData, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
 import Label from "../components/Label";
 import Button from "../components/Button";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useUserContext } from "../providers/UserProvider";
+import Error, { isError, isUser } from "../components/Error";
 
-export default function Auth() {
+export default function Login() {
   const response = useActionData();
   const { setUser } = useUserContext();
   const navigate = useNavigate();
-  const formRef = useRef(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (response) {
+    if (isUser(response)) {
+      setErrorMessage(null);
       setUser(response);
       navigate("/");
-    } else {
-      if (formRef.current) {
-        (formRef.current as HTMLFormElement).reset();
-      }
+    } else if (isError(response)) {
+      setErrorMessage(response.error);
     }
   }, [response]);
 
   return (
     <Form
-      className="flex flex-col gap-4 w-full justify-center items-center"
+      className="flex flex-col gap-4 w-fit h-fit mt-auto mb-auto ml-auto mr-auto"
       action="/login"
       method="post"
-      ref={formRef}
     >
       <Label htmlFor="email" className="w-70">
         Email
@@ -37,9 +36,10 @@ export default function Auth() {
           name="email"
           id="email"
           placeholder="example@domain.com"
+          required
         />
       </Label>
-      <Label htmlFor="email" className="w-70">
+      <Label htmlFor="password" className="w-70">
         Password
         <br />
         <Input
@@ -47,8 +47,16 @@ export default function Auth() {
           name="password"
           id="password"
           placeholder="****"
+          required
         />
       </Label>
+      <Link
+        to="/register"
+        className="mr-0 ml-auto text-sm underline text-blue-700"
+      >
+        Don't have an account?
+      </Link>
+      {errorMessage && <Error message={errorMessage} />}
       <Button className="w-70" type="submit">
         Login
       </Button>

@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import { createNewMessage } from "../models/message";
 import express from "express";
-import { getUserById, getUserBySessionToken, IUser } from "../models/user";
+import { getUserById, IUser } from "../models/user";
 import mongoose from "mongoose";
 
 interface IWSMessage {

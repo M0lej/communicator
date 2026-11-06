@@ -15,6 +15,8 @@ import {
 import { get } from "lodash";
 import { hashPassword, random } from "../lib/encryption";
 import { activeUsers } from "./ws";
+import { uploadAvatarFromBuffer } from "../lib/avatar";
+import { randomUUID } from "node:crypto";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -103,8 +105,9 @@ export const updateUser = async (
   try {
     const { userId } = req.params;
     const { username } = req.body;
+    const avatar = req.file;
 
-    if (!userId || !username) {
+    if (!userId) {
       return res.sendStatus(400);
     }
 
@@ -114,7 +117,23 @@ export const updateUser = async (
       return res.sendStatus(400);
     }
 
-    user.username = username;
+    if (avatar) {
+      const avatarFileId = await uploadAvatarFromBuffer(
+        avatar.buffer,
+        randomUUID(),
+        {
+          mimeType: avatar.mimetype,
+          userId,
+          uploadedAt: new Date(),
+        },
+      );
+
+      user.avatarFileId = avatarFileId as string;
+    }
+
+    if (username) {
+      user.username = username;
+    }
     const updatedUser = await user.save();
 
     return res.status(200).json(updatedUser).end();
@@ -186,9 +205,21 @@ export const getFriends = async (
       return res.sendStatus(403);
     }
 
-    const users: IUser[] = (await _getFriends(user)) ?? [];
+    const friends: IUser[] = (await _getFriends(user)) ?? [];
+    const activeFriends: IUser[] = friends.filter((friend: IUser) =>
+      activeUsers.has(friend._id.toString()),
+    );
 
-    return res.status(200).json(users);
+    const extendedUsersObjects = await Promise.all(
+      friends.map(async (friend: IUser) => {
+        return {
+          ...friend.toObject(),
+          status: activeFriends.includes(friend),
+        };
+      }),
+    );
+
+    return res.status(200).json(extendedUsersObjects);
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);

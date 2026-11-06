@@ -15,6 +15,10 @@ interface IUsersSingleResponse {
   data: IUser;
 }
 
+export interface IUserWithStatus extends IUser {
+  status: boolean;
+}
+
 export type UsersResponse = IUsersArrayResponse | IUsersSingleResponse;
 
 export async function users({ request }: { request: Request }) {
@@ -71,20 +75,6 @@ async function findUsers(userName: string) {
     const response = await axios({
       method: "GET",
       url: `/api/users/find/${encodeURIComponent(String(userName))}`,
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
-}
-
-export async function getActiveFriends() {
-  try {
-    const response = await axios({
-      method: "GET",
-      url: `/api/users/me/friends/active`,
     });
 
     return response.data;
