@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Link, type LinkProps } from "react-router-dom";
+import { NavLink, type NavLinkProps } from "react-router-dom";
 
-interface IMenuLink extends LinkProps {
+interface IMenuLink extends Omit<NavLinkProps, "className"> {
   children?: ReactNode;
   className?: string;
 }
@@ -12,11 +12,18 @@ export default function MenuLink({
   ...linkProps
 }: IMenuLink) {
   return (
-    <Link
+    <NavLink
       {...linkProps}
-      className={`rounded-xl border border-blue-400/20 bg-blue-800/40 px-4 py-2 font-medium text-white transition-all duration-200 hover:bg-blue-700/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 active:scale-[0.98] ${className}`}
+      end={linkProps.to === "/"}
+      className={({ isActive }) =>
+        `w-full rounded-lg border px-4 py-3 text-center font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 ${
+          isActive
+            ? "border-blue-400/40 bg-blue-700 text-white"
+            : "border-transparent text-blue-100 hover:border-blue-500 hover:bg-blue-700"
+        } ${className ?? ""}`
+      }
     >
       {children}
-    </Link>
+    </NavLink>
   );
 }

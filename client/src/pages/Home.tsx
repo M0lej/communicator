@@ -190,12 +190,12 @@ export default function Home() {
   return (
     <div
       ref={homeContainerRef}
-      className={`relative flex h-full min-h-0 w-full overflow-hidden bg-linear-to-br from-blue-50 to-white ${isResizingChat ? "select-none" : ""}`}
+      className={`relative flex h-full min-h-0 w-full overflow-hidden bg-slate-50 ${isResizingChat ? "select-none" : ""}`}
     >
-      <section className="flex min-h-0 w-full flex-col border-r border-blue-100 bg-white pt-16 shadow-sm">
+      <section className="flex min-h-0 w-full flex-col border-r border-slate-200 bg-white pt-16">
         {friends.filter((friend) => friend.status == true).length > 0 && (
-          <section className="border-b border-blue-100 px-6 py-4 sm:px-10">
-            <h2 className="mb-3 text-lg font-semibold text-blue-900">
+          <section className="border-b border-slate-200 px-6 py-4 sm:px-10">
+            <h2 className="mb-3 text-lg font-semibold text-slate-900">
               Online friends
             </h2>
             <div className="flex gap-4 overflow-x-auto pb-1">
@@ -210,7 +210,7 @@ export default function Home() {
           </section>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <h2 className="px-6 pb-2 pt-4 text-lg font-semibold text-blue-900 sm:px-10">
+          <h2 className="px-6 pb-2 pt-4 text-lg font-semibold text-slate-900 sm:px-10">
             Chats
           </h2>
           {chats.map((chat) => (
@@ -230,7 +230,7 @@ export default function Home() {
       </section>
       {selectedChat && (
         <section
-          className="absolute inset-y-0 right-0 flex h-full min-h-0 w-1/2 origin-right flex-col border-l border-blue-200 bg-white shadow-2xl max-sm:w-full"
+          className="absolute inset-y-0 right-0 flex h-full min-h-0 w-1/2 origin-right flex-col border-l border-slate-200 bg-white shadow-lg max-sm:w-full"
           style={chatWidth ? { width: `${chatWidth}px` } : undefined}
         >
           <div

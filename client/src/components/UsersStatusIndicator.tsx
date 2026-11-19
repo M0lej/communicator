@@ -13,8 +13,9 @@ export default function UsersStatusIndicator({ user, ...props }: IProps) {
     >
       <div className="relative">
         <img
-          className="h-10 aspect-square rounded-full bg-linear-to-br from-blue-200 to-blue-400 shadow-md"
+          className="h-10 aspect-square rounded-full bg-blue-100 ring-1 ring-slate-200"
           src={`/api/avatar/${encodeURIComponent(user._id)}`}
+          alt=""
         />
         {user.status && (
           <div className="absolute rounded-full w-3 aspect-square bg-green-500 right-0 bottom-0 ring-2 ring-white"></div>

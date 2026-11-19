@@ -84,10 +84,12 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           ${!expanded ? "left-5" : "max-sm:left-5 left-45"}
           cursor-pointer 
           transition-all 
-          z-20 rounded-xl bg-white p-2 text-blue-900 shadow-md
+          z-20 rounded-lg border border-blue-100 bg-white p-2 text-blue-800 shadow-sm
           top-2.5
         `}
         onClick={() => setExpanded(!expanded)}
+        aria-label={expanded ? "Close menu" : "Open menu"}
+        aria-expanded={expanded}
       >
         <Menu />
       </button>
@@ -98,17 +100,21 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           max-sm:w-full
           w-60
           ${!expanded ? "max-w-0 px-0 border-r-0" : "max-sm:max-w-full max-w-60 px-3 border-r"}
-          bg-linear-to-b from-blue-950 via-blue-900 to-blue-800 text-white shadow-xl
+          rounded-r-2xl border-blue-800 bg-blue-900 text-white shadow-lg
           transition-all
           flex
           flex-col
           items-center
           overflow-hidden
           pt-20
-          gap-2
+          gap-1
           z-10 border-blue-800
         `}
       >
+        <img
+          className="rounded-full aspect-square h-20 mb-5"
+          src={`/api/avatar/${user?._id}`}
+        />
         {user !== null && (
           <h1 className="mb-3 w-full truncate px-3 text-center text-sm font-medium text-blue-100">
             Logged in as{" "}

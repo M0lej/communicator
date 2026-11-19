@@ -21,11 +21,11 @@ export default function Button({
         cursor-pointer
         font-semibold
         text-white
-        bg-linear-to-r from-blue-500 to-blue-700
-        hover:from-blue-600 hover:to-blue-800
+        bg-blue-600
+        hover:bg-blue-700
         active:scale-[0.98]
-        transition-all duration-200
-        shadow-md hover:shadow-lg
+        transition-colors duration-150
+        shadow-sm
         focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600
         disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none
     `}

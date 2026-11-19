@@ -19,11 +19,13 @@ export const parseAvatarUpload = (
 
     if (error instanceof multer.MulterError) {
       const status = error.code === "LIMIT_FILE_SIZE" ? 413 : 400;
-      return res.status(status).json({ error: "Invalid avatar upload." });
+      return res.status(status).json({ message: "Invalid avatar upload." });
     }
 
     console.error("Failed to parse avatar upload.", error);
-    return res.status(500).json({ error: "Failed to parse avatar upload." });
+    return res
+      .status(500)
+      .json({ message: "Failed to parse avatar upload." });
   });
 };
 
@@ -43,7 +45,7 @@ export const avatarUpload = async (
   }
 
   if (req.file.size > maxAvatarSize) {
-    return res.status(413).json({ error: "Avatar file is too large." });
+    return res.status(413).json({ message: "Avatar file is too large." });
   }
 
   let sanitizedAvatar: Awaited<ReturnType<typeof sanitizeAvatar>>;
@@ -51,11 +53,13 @@ export const avatarUpload = async (
     sanitizedAvatar = await sanitizeAvatar(req.file.buffer);
   } catch (error) {
     if (error instanceof AvatarValidationError) {
-      return res.status(error.statusCode).json({ error: error.message });
+      return res.status(error.statusCode).json({ message: error.message });
     }
 
     console.error("Failed to validate avatar image.", error);
-    return res.status(500).json({ error: "Failed to process avatar image." });
+    return res
+      .status(500)
+      .json({ message: "Failed to process avatar image." });
   }
 
   try {
@@ -67,6 +71,6 @@ export const avatarUpload = async (
     return next();
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Failed to upload avatar." });
+    return res.status(500).json({ message: "Failed to upload avatar." });
   }
 };

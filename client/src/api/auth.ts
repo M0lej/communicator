@@ -27,21 +27,21 @@ export async function login({ request }: { request: Request }) {
       if (
         typeof responseData === "object" &&
         responseData !== null &&
-        "error" in responseData &&
-        typeof responseData.error === "string"
+        "message" in responseData &&
+        typeof responseData.message === "string"
       ) {
         return responseData;
       }
 
       return {
-        error: error.response
+        message: error.response
           ? "Invalid email or password."
           : "Unable to connect to the server.",
       };
     }
 
     return {
-      error: "An unexpected error occurred while logging in.",
+      message: "An unexpected error occurred while logging in.",
     };
   }
 }
@@ -60,7 +60,7 @@ export async function register({ request }: { request: Request }) {
 
     if (password != confirmPassword) {
       return {
-        error: "Passwords doesn't match.",
+        message: "Passwords doesn't match.",
       };
     }
 

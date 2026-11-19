@@ -153,7 +153,7 @@ export default function Friends() {
   return (
     <div className="h-full w-full overflow-y-auto bg-slate-50">
       <Form
-        className="sticky top-0 z-10 flex h-16 w-full items-center justify-center gap-2 border-b border-blue-200 bg-blue-50/95 px-4 shadow-sm backdrop-blur"
+        className="sticky top-0 z-10 flex h-16 w-full items-center justify-center gap-2 border-b border-slate-200 bg-white px-4"
         method="POST"
         action="/friends"
       >
@@ -167,7 +167,7 @@ export default function Friends() {
           required
         />
         <button
-          className="flex h-10 aspect-square items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="flex h-10 aspect-square items-center justify-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           type="submit"
         >
           <Search className="" />

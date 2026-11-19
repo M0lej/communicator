@@ -9,7 +9,7 @@ export default function FriendsFind() {
   return (
     <div className="h-full w-full overflow-y-auto bg-slate-50">
       <Form
-        className="flex h-16 w-full items-center justify-center gap-2 border-b border-blue-200 bg-blue-50 px-4 shadow-sm"
+        className="flex h-16 w-full items-center justify-center gap-2 border-b border-slate-200 bg-white px-4"
         action="/friends/find"
         method="post"
       >
@@ -21,7 +21,7 @@ export default function FriendsFind() {
           required
         />
         <button
-          className="flex h-10 aspect-square items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm transition hover:bg-blue-700"
+          className="flex h-10 aspect-square items-center justify-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700"
           type="submit"
         >
           <Search className="" />

@@ -25,7 +25,7 @@ export default function Register() {
         setUser(response);
         navigate("/");
       } else if (isError(response)) {
-        setErrorMessage(response.error);
+        setErrorMessage(response.message);
       }
     } else {
       if (formRef.current) {
@@ -36,12 +36,12 @@ export default function Register() {
 
   return (
     <Form
-      className="mx-auto my-auto flex h-max w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-blue-100 bg-white p-6 shadow-xl sm:p-8"
+      className="mx-auto my-auto flex h-max w-full max-w-sm flex-col items-center gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
       action="/register"
       method="post"
       ref={formRef}
     >
-      <h1 className="text-2xl font-bold tracking-tight text-blue-950">Create your account</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create your account</h1>
       <Label htmlFor="email" className="w-70">
         Email
         <br />

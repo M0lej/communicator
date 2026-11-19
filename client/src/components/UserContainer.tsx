@@ -32,7 +32,7 @@ export function UserContainer({
   formButtons,
 }: IUserContainer) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-blue-200 bg-linear-to-r from-blue-50 to-blue-100 px-4 py-3 text-blue-950 shadow-sm transition hover:shadow-md sm:px-6">
+    <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-colors hover:border-blue-200 sm:px-6">
       <span className="min-w-0 truncate font-medium">{username}</span>
       <div className="flex shrink-0 items-center gap-2 text-blue-700 sm:gap-4">
         {buttons}

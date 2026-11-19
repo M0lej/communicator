@@ -26,22 +26,22 @@ export function isUser(value: unknown): value is IUser {
   );
 }
 
-export interface IError {
-  error: string;
+export interface IErrorResponse {
+  message: string;
 }
 
-export function isError(value: unknown): value is IError {
+export function isError(value: unknown): value is IErrorResponse {
   return (
     typeof value === "object" &&
     value != null &&
-    "error" in value &&
-    typeof value.error === "string"
+    "message" in value &&
+    typeof value.message === "string"
   );
 }
 
 export default function Error({ message }: IProps) {
   return (
-    <h2 className="flex w-full justify-center rounded-xl bg-linear-to-r from-red-500 to-red-600 p-3 text-white shadow-md animate-pop-from-bottom">
+    <h2 className="flex w-full justify-center rounded-lg border border-red-200 bg-red-50 p-3 text-center text-sm font-medium text-red-800 animate-pop-from-bottom">
       {message}
     </h2>
   );

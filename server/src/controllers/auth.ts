@@ -85,7 +85,7 @@ export const login = async (req: express.Request, res: express.Response) => {
 
     if (encryptedPassword !== user.authentication.password) {
       return res.status(403).json({
-        error: "Invalid email or password",
+        message: "Invalid email or password",
       });
     }
 

@@ -130,6 +130,12 @@ export const updateUser = async (
     }
 
     if (username) {
+      if (username.length < 3 || username.length > 20) {
+        return res
+          .status(400)
+          .send("Username must be between 3 and 20 characters long.")
+          .end();
+      }
       user.username = username;
     }
 
@@ -199,7 +205,7 @@ export const updatePassword = async (
     if (hashedPasswordWithOldSalt == user.authentication.password) {
       return res
         .status(400)
-        .json({ error: "Old password and new password are the same." })
+        .json({ message: "Old password and new password are the same." })
         .end();
     }
 

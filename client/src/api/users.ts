@@ -279,7 +279,7 @@ async function updatePassword(
   if (!userId || !oldPassword || !newPassword || !confirmPassword) return null;
 
   if (newPassword != confirmPassword) {
-    return { error: "Passwords doesn't match." };
+    return { message: "Passwords doesn't match." };
   }
 
   const isOldPasswordCorrect = await comparePassword(
@@ -288,7 +288,7 @@ async function updatePassword(
   );
 
   if (!isOldPasswordCorrect) {
-    return { error: "Incorrect old password." };
+    return { message: "Incorrect old password." };
   }
 
   const response = await axios({

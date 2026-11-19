@@ -10,6 +10,9 @@ export default function Account() {
   const response = useActionData<unknown>();
   const { user, setUser } = useUserContext();
   const [isEditingUserName, toggleUserNameEditing] = useState(false);
+  const [usernameInputValue, setUsernameInputValue] = useState(
+    user?.username ?? "",
+  );
   const [isEditingPassword, togglePasswordEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
 
@@ -21,15 +24,25 @@ export default function Account() {
       if (isUser(response)) {
         setErrorMessage(null);
         setUser(response);
+        setUsernameInputValue(response.username);
       } else if (isError(response)) {
-        setErrorMessage(response.error);
+        setErrorMessage(response.message);
       }
     }
   }, [response]);
 
+  useEffect(() => {
+    setUsernameInputValue(user?.username ?? "");
+  }, [user]);
+
+  function cancelUsernameEditing() {
+    setUsernameInputValue(user?.username ?? "");
+    toggleUserNameEditing(false);
+  }
+
   return (
-    <div className="h-full w-full overflow-y-auto bg-linear-to-br from-blue-50 to-slate-100 p-4 sm:flex sm:items-center sm:justify-center sm:p-8">
-      <div className="mx-auto h-fit w-full max-w-2xl rounded-2xl border border-blue-100 bg-white p-5 shadow-xl sm:p-8">
+    <div className="h-full w-full overflow-y-auto bg-slate-50 p-4 sm:flex sm:items-center sm:justify-center sm:p-8">
+      <div className="mx-auto h-fit w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
         <Form method="post" action="/account" encType="multipart/form-data">
           <div className="flex flex-col items-center justify-center gap-4">
             <input type="hidden" name="userId" value={user?._id ?? ""} />
@@ -41,7 +54,7 @@ export default function Account() {
             >
               {user ? (
                 <img
-                  className="h-30 aspect-square rounded-full shadow-md"
+                  className="h-30 aspect-square rounded-full ring-1 ring-slate-200"
                   src={`/api/avatar/${encodeURIComponent(user._id)}?v=${encodeURIComponent(user.avatarFileId ?? "default")}`}
                   alt={`${user.username}'s profile picture`}
                 />
@@ -66,19 +79,29 @@ export default function Account() {
               <input
                 type="text"
                 readOnly={!isEditingUserName}
-                placeholder={user?.username}
+                value={usernameInputValue}
+                onChange={(e) => setUsernameInputValue(e.currentTarget.value)}
                 name="username"
+                maxLength={20}
+                minLength={3}
                 className={`min-w-0 max-w-full bg-transparent text-center text-2xl font-bold text-blue-950 field-sizing-content focus-visible:outline-2 focus-visible:outline-blue-400 sm:text-3xl ${!isEditingUserName && "placeholder-blue-950"}`}
               />
 
               {isEditingUserName && (
                 <>
+                  <p
+                    className={`
+                      ${usernameInputValue.length == 20 || usernameInputValue.length < 3 ? "text-red-400" : usernameInputValue.length >= 15 ? "text-yellow-500" : "text-blue-950"}
+                    `}
+                  >
+                    {usernameInputValue.length} / 20
+                  </p>
                   <button type="submit">
                     <Check className="cursor-pointer" />
                   </button>
                   <X
                     className="cursor-pointer"
-                    onClick={() => toggleUserNameEditing(false)}
+                    onClick={cancelUsernameEditing}
                   />
                 </>
               )}
