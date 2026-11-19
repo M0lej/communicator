@@ -7,12 +7,10 @@ import {
   restoreSession,
 } from "../controllers/auth";
 import { isAuthenticated, isOwner } from "../middlewares/auth";
-import multer from "multer";
-
-const upload = multer({ storage: multer.memoryStorage() });
+import { avatarUpload, parseAvatarUpload } from "../middlewares/upload";
 
 export default function authRouter(router: express.Router) {
-  router.post("/auth/register", upload.single("avatar"), register);
+  router.post("/auth/register", parseAvatarUpload, avatarUpload, register);
   router.post("/auth/login", login);
   router.get("/auth/me", isLoggedIn);
   router.post("/auth/restore", restoreSession);

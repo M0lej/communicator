@@ -1,33 +1,54 @@
 import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import mongoose from "mongoose";
 import { avatarBucket } from "./connectToDb";
 
 export function uploadAvatarFromBuffer(
   buffer: Buffer,
-  filename: string,
-  metadata = {},
-) {
-  return new Promise((resolve, reject) => {
-    if (!avatarBucket) {
-      return reject(new Error("GridFS Bucket is not ready."));
-    }
+  metadata: Record<string, unknown> = {},
+): Promise<string> {
+  if (!avatarBucket) {
+    return Promise.reject(new Error("GridFS Bucket is not ready."));
+  }
 
-    const uploadStream = avatarBucket.openUploadStream(filename, {
-      metadata,
+  const bucket = avatarBucket;
+  const uploadStream = bucket.openUploadStream(crypto.randomUUID(), { metadata });
+
+  return pipeline(Readable.from([buffer]), uploadStream)
+    .then(() => uploadStream.id.toString())
+    .catch(async (error: unknown) => {
+      try {
+        await bucket.delete(uploadStream.id);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up an incomplete avatar upload.",
+          cleanupError,
+        );
+      }
+
+      throw error;
     });
+}
 
-    const readStream = Readable.from(buffer);
+export async function deleteAvatarFile(fileId: string): Promise<void> {
+  if (!avatarBucket) {
+    throw new Error("GridFS Bucket is not ready.");
+  }
 
-    readStream.pipe(uploadStream);
+  if (!mongoose.Types.ObjectId.isValid(fileId)) {
+    throw new Error("Invalid avatar file ID.");
+  }
 
-    uploadStream.on("error", (error) => reject(error));
-    uploadStream.on("finish", () => resolve(uploadStream.id));
-  });
+  await avatarBucket.delete(new mongoose.Types.ObjectId(fileId));
 }
 
 export function getAvatarDownloadStream(fileId: string) {
   if (!avatarBucket) {
     return new Error("GridFS Bucket is not ready.");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(fileId)) {
+    return new Error("Invalid avatar file ID.");
   }
 
   return avatarBucket.openDownloadStream(new mongoose.Types.ObjectId(fileId));

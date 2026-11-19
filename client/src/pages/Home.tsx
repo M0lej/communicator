@@ -23,10 +23,12 @@ export default function Home() {
   const [chats, setChats] = useState<IChatWithTypingInfo[]>([]);
   const [selectedChat, setSelectedChat] = useState<IChat | null>(null);
   const selectedChatMethodsRef = useRef<IChatMethodsRef | null>(null);
+  const homeContainerRef = useRef<HTMLDivElement | null>(null);
   const { user } = useUserContext();
   const { service } = useWSContext();
   const [friends, setFriends] = useState<IUserWithStatus[]>([]);
   const [chatWidth, setChatWidth] = useState<number | null>();
+  const [isResizingChat, setIsResizingChat] = useState(false);
 
   useEffect(() => {
     if (!service) {
@@ -132,19 +134,30 @@ export default function Home() {
     setSelectedChat(null);
   }
 
-  function onChatResizeDrag(event: React.DragEvent<HTMLDivElement>) {
+  function onChatResizeStart(event: React.PointerEvent<HTMLDivElement>) {
     event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setIsResizingChat(true);
+    resizeChatToPointer(event.clientX);
+  }
 
-    if (event.clientX == 0) {
-      return;
+  function onChatResizeDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      resizeChatToPointer(event.clientX);
     }
+  }
 
-    const newWidth = clamp(
-      window.outerWidth - event.clientX,
-      window.outerWidth / 4,
-      (window.outerWidth * 3) / 4,
+  function onChatResizeEnd() {
+    setIsResizingChat(false);
+  }
+
+  function resizeChatToPointer(clientX: number) {
+    const bounds = homeContainerRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+
+    setChatWidth(
+      clamp(bounds.right - clientX, bounds.width / 4, (bounds.width * 3) / 4),
     );
-    setChatWidth(newWidth);
   }
 
   async function openChat(otherUser: IUserWithStatus) {
@@ -175,30 +188,58 @@ export default function Home() {
   }
 
   return (
-    <div className="relative w-screen h-screen flex overflow-x-hidden">
-      <section className="w-full flex flex-col pt-15">
-        <section className="pl-10">
-          <div className="flex gap-2">
-            {friends.map((friend) => (
-              <UsersStatusIndicator
-                user={friend}
-                onClick={() => openChat(friend)}
-              />
-            ))}
-          </div>
-        </section>
-        {chats.map((chat, i) => (
-          <ChatLink chat={chat} key={i} onClick={() => setSelectedChat(chat)} />
-        ))}
+    <div
+      ref={homeContainerRef}
+      className={`relative flex h-full min-h-0 w-full overflow-hidden bg-linear-to-br from-blue-50 to-white ${isResizingChat ? "select-none" : ""}`}
+    >
+      <section className="flex min-h-0 w-full flex-col border-r border-blue-100 bg-white pt-16 shadow-sm">
+        {friends.filter((friend) => friend.status == true).length > 0 && (
+          <section className="border-b border-blue-100 px-6 py-4 sm:px-10">
+            <h2 className="mb-3 text-lg font-semibold text-blue-900">
+              Online friends
+            </h2>
+            <div className="flex gap-4 overflow-x-auto pb-1">
+              {friends.map((friend) => (
+                <UsersStatusIndicator
+                  user={friend}
+                  key={friend._id}
+                  onClick={() => openChat(friend)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <h2 className="px-6 pb-2 pt-4 text-lg font-semibold text-blue-900 sm:px-10">
+            Chats
+          </h2>
+          {chats.map((chat) => (
+            <ChatLink
+              chat={chat}
+              key={chat._id}
+              className="w-full rounded-none px-6 sm:px-10"
+              onClick={() => setSelectedChat(chat)}
+            />
+          ))}
+          {chats.length === 0 && (
+            <p className="px-6 py-4 text-sm text-slate-500 sm:px-10">
+              No conversations yet. Start a chat with a friend.
+            </p>
+          )}
+        </div>
       </section>
       {selectedChat && (
         <section
-          className="absolute inset-y-0 right-0 w-1/2 max-sm:w-full h-full flex flex-col min-h-0 origin-right border-l border-gray-300 animate-pop-from-right"
+          className="absolute inset-y-0 right-0 flex h-full min-h-0 w-1/2 origin-right flex-col border-l border-blue-200 bg-white shadow-2xl max-sm:w-full"
           style={chatWidth ? { width: `${chatWidth}px` } : undefined}
         >
           <div
-            className="h-full w-10 -ml-5 absolute z-0 cursor-col-resize max-md:hidden"
-            onDrag={onChatResizeDrag}
+            className="absolute inset-y-0 -left-5 z-10 hidden w-10 touch-none cursor-col-resize select-none md:block"
+            onPointerDown={onChatResizeStart}
+            onPointerMove={onChatResizeDrag}
+            onPointerUp={onChatResizeEnd}
+            onPointerCancel={onChatResizeEnd}
+            onLostPointerCapture={onChatResizeEnd}
           />
           <Chat
             chat={selectedChat}

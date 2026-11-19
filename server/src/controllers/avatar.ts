@@ -2,7 +2,6 @@ import express from "express";
 import mongoose from "mongoose";
 import { getAvatarDownloadStream } from "../lib/avatar";
 import { getUserById } from "../models/user";
-import { avatarBucket } from "../lib/connectToDb";
 import path from "node:path";
 
 export const getAvatar = async (
@@ -19,23 +18,57 @@ export const getAvatar = async (
     const user = await getUserById(userId as string);
 
     if (!user) {
-      return res.sendStatus(400);
+      return res.sendStatus(404);
     }
 
     if (!user.avatarFileId) {
-      return res.sendFile(path.join(__dirname, "../../public/default.png"));
+      res.setHeader("Content-Type", "image/png");
+      return res.sendFile(
+        path.join(__dirname, "../../public/default.png"),
+        (error) => {
+          if (error) {
+            console.error(error);
+            if (res.headersSent) {
+              res.destroy(error);
+            } else {
+              res.sendStatus(500);
+            }
+          }
+        },
+      );
     }
 
-    res.setHeader("Content-Type", "image/png");
+    if (!mongoose.Types.ObjectId.isValid(user.avatarFileId)) {
+      return res.sendStatus(404);
+    }
 
     const downloadStream = getAvatarDownloadStream(user.avatarFileId);
 
     if (downloadStream instanceof Error) {
-      return res.status(500);
+      console.error(downloadStream);
+      return res.sendStatus(500);
     }
 
-    downloadStream.on("error", () => {
-      res.sendStatus(404);
+    downloadStream.once("file", (file) => {
+      const contentType = file.metadata?.contentType;
+      if (
+        contentType === "image/jpeg" ||
+        contentType === "image/png" ||
+        contentType === "image/webp" ||
+        contentType === "image/gif"
+      ) {
+        res.setHeader("Content-Type", contentType);
+        res.setHeader("X-Content-Type-Options", "nosniff");
+      }
+    });
+
+    downloadStream.on("error", (error) => {
+      console.error("Failed to read avatar from GridFS.", error);
+      if (res.headersSent) {
+        res.destroy();
+      } else {
+        res.sendStatus(404);
+      }
     });
 
     downloadStream.pipe(res);

@@ -8,7 +8,7 @@ interface IUsersArrayResponse {
 }
 
 export type UsersIntent = "add" | "remove" | "pending_accept" | "pending_deny";
-export type UpdateUserIntent = "username" | "password";
+export type UpdateUserIntent = "other" | "password";
 
 interface IUsersSingleResponse {
   intent: UsersIntent;
@@ -209,6 +209,7 @@ export async function updateUser({ request }: { request: Request }) {
       oldPassword,
       newPassword,
       confirmPassword,
+      avatar,
     } = data;
 
     if (!intent) {
@@ -216,8 +217,6 @@ export async function updateUser({ request }: { request: Request }) {
     }
 
     switch (intent as UpdateUserIntent) {
-      case "username":
-        return await updateUsername(userId as string, username as string);
       case "password":
         return await updatePassword(
           userId as string,
@@ -225,8 +224,12 @@ export async function updateUser({ request }: { request: Request }) {
           newPassword as string,
           confirmPassword as string,
         );
-      default:
-        return null;
+      case "other":
+        return await updateOther(
+          userId as string,
+          username as string,
+          avatar instanceof File && avatar.size > 0 ? avatar : undefined,
+        );
     }
   } catch (error) {
     console.error(error);
@@ -253,16 +256,16 @@ export async function getUsersByIds(ids: string[]) {
   }
 }
 
-async function updateUsername(userId: string, username: string) {
-  if (!userId || !username) return null;
+async function updateOther(userId: string, username?: string, avatar?: File) {
+  const formData = new FormData();
 
-  const response = await axios({
-    method: "PATCH",
-    url: `/api/users/${encodeURIComponent(userId as string)}`,
-    data: {
-      username,
-    },
-  });
+  if (username) formData.append("username", username);
+  if (avatar) formData.append("avatar", avatar);
+
+  const response = await axios.patch(
+    `/api/users/${encodeURIComponent(userId)}`,
+    formData,
+  );
 
   return response.data;
 }

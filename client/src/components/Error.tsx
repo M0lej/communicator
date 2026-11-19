@@ -14,6 +14,9 @@ export function isUser(value: unknown): value is IUser {
     typeof value.username === "string" &&
     "email" in value &&
     typeof value.email === "string" &&
+    (!("avatarFileId" in value) ||
+      typeof value.avatarFileId === "string" ||
+      value.avatarFileId === undefined) &&
     "sentFriendRequests" in value &&
     Array.isArray(value.sentFriendRequests) &&
     "pendingFriendRequests" in value &&
@@ -38,7 +41,7 @@ export function isError(value: unknown): value is IError {
 
 export default function Error({ message }: IProps) {
   return (
-    <h2 className="w-full flex justify-center bg-red-400 text-white p-2 rounded-lg animate-pop-from-bottom">
+    <h2 className="flex w-full justify-center rounded-xl bg-linear-to-r from-red-500 to-red-600 p-3 text-white shadow-md animate-pop-from-bottom">
       {message}
     </h2>
   );

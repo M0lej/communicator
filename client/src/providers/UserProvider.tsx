@@ -4,6 +4,7 @@ export interface IUser {
   _id: string;
   username: string;
   email: string;
+  avatarFileId?: string;
   sentFriendRequests: string[];
   pendingFriendRequests: string[];
   friends: string[];

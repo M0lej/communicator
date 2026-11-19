@@ -1,4 +1,4 @@
-import { Form, useActionData, useNavigate } from "react-router-dom";
+import { Form, useActionData, useNavigate, useLocation } from "react-router-dom";
 import Input from "../components/Input";
 import Label from "../components/Label";
 import Button from "../components/Button";
@@ -10,8 +10,13 @@ export default function Register() {
   const response = useActionData();
   const { setUser } = useUserContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const formRef = useRef(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setErrorMessage(null);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (response) {
@@ -31,11 +36,12 @@ export default function Register() {
 
   return (
     <Form
-      className="flex flex-col gap-4 w-fit h-fit mt-auto mb-auto ml-auto mr-auto "
+      className="mx-auto my-auto flex h-max w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-blue-100 bg-white p-6 shadow-xl sm:p-8"
       action="/register"
       method="post"
       ref={formRef}
     >
+      <h1 className="text-2xl font-bold tracking-tight text-blue-950">Create your account</h1>
       <Label htmlFor="email" className="w-70">
         Email
         <br />

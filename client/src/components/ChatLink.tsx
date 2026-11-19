@@ -30,16 +30,16 @@ export default function ChatLink({
 
   return (
     <button
-      className={`py-4 px-8 rounded-l h-fit flex items-center gap-4 hover:bg-gray-200 transition-colors cursor-pointer ${className}`}
+      className={`py-4 px-8 rounded-xl h-fit flex items-center gap-4 hover:bg-blue-50 transition-all duration-200 cursor-pointer border-b border-gray-100 ${className}`}
       {...props}
     >
       <img
         className="h-10 aspect-square rounded-full bg-gray-400"
         src={`/api/avatar/${encodeURIComponent(otherUserId)}`}
       />
-      <div className="flex flex-col">
-        <h2>{label}</h2>
-        <p className="text-xs text-gray-400">
+      <div className="min-w-0 flex flex-col text-left">
+        <h2 className="truncate font-semibold text-slate-800">{label}</h2>
+        <p className="max-w-full truncate text-xs text-slate-500">
           {chat.isTyping
             ? `${label} is typing...`
             : latestMessage && (

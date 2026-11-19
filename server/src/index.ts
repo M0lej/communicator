@@ -18,6 +18,7 @@ const corsOptions = {
 app.use(cookieParser());
 app.use(compression());
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use("/api", router(ws));
 app.use(cors(corsOptions));
 

@@ -15,8 +15,7 @@ import {
 import { get } from "lodash";
 import { hashPassword, random } from "../lib/encryption";
 import { activeUsers } from "./ws";
-import { uploadAvatarFromBuffer } from "../lib/avatar";
-import { randomUUID } from "node:crypto";
+import { deleteAvatarFile, uploadAvatarFromBuffer } from "../lib/avatar";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -102,10 +101,11 @@ export const updateUser = async (
   req: express.Request,
   res: express.Response,
 ) => {
+  let uploadedAvatarFileId: string | undefined;
   try {
     const { userId } = req.params;
-    const { username } = req.body;
-    const avatar = req.file;
+    const { username, avatarFileId } = req.body ?? {};
+    uploadedAvatarFileId = avatarFileId;
 
     if (!userId) {
       return res.sendStatus(400);
@@ -114,32 +114,58 @@ export const updateUser = async (
     const user: IUser | null = await getUserById(userId as string);
 
     if (!user) {
-      return res.sendStatus(400);
-    }
+      if (uploadedAvatarFileId) {
+        try {
+          await deleteAvatarFile(uploadedAvatarFileId);
+        } catch (cleanupError) {
+          console.error(
+            "Failed to clean up an unreferenced avatar.",
+            cleanupError,
+          );
+        }
+        uploadedAvatarFileId = undefined;
+      }
 
-    if (avatar) {
-      const avatarFileId = await uploadAvatarFromBuffer(
-        avatar.buffer,
-        randomUUID(),
-        {
-          mimeType: avatar.mimetype,
-          userId,
-          uploadedAt: new Date(),
-        },
-      );
-
-      user.avatarFileId = avatarFileId as string;
+      return res.sendStatus(404);
     }
 
     if (username) {
       user.username = username;
     }
+
+    if (avatarFileId) {
+      const previousAvatarFileId = user.avatarFileId;
+      if (previousAvatarFileId && previousAvatarFileId !== avatarFileId) {
+        try {
+          await deleteAvatarFile(previousAvatarFileId);
+        } catch (error) {
+          console.error(
+            "Failed to remove the previous avatar from GridFS.",
+            error,
+          );
+        }
+      }
+
+      user.avatarFileId = avatarFileId;
+    }
+
     const updatedUser = await user.save();
 
     return res.status(200).json(updatedUser).end();
   } catch (error) {
+    if (uploadedAvatarFileId) {
+      try {
+        await deleteAvatarFile(uploadedAvatarFileId);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up an unreferenced avatar.",
+          cleanupError,
+        );
+      }
+    }
+
     console.error(error);
-    return res.sendStatus(403);
+    return res.sendStatus(500);
   }
 };
 

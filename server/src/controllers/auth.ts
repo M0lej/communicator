@@ -7,18 +7,25 @@ import {
 } from "../models/user";
 import { hashPassword, hashSessionToken, random } from "../lib/encryption";
 import { get } from "lodash";
+import { deleteAvatarFile } from "../lib/avatar";
 
 export const register = async (req: express.Request, res: express.Response) => {
+  let uploadedAvatarFileId: string | undefined;
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, avatarFileId } = req.body ?? {};
+    uploadedAvatarFileId = avatarFileId;
 
     if (!username || !email || !password) {
+      await cleanupUploadedAvatar(uploadedAvatarFileId);
+      uploadedAvatarFileId = undefined;
       return res.sendStatus(400);
     }
 
     const foundUser = await getUserByEmail(email);
 
     if (foundUser) {
+      await cleanupUploadedAvatar(uploadedAvatarFileId);
+      uploadedAvatarFileId = undefined;
       return res.sendStatus(400);
     }
 
@@ -28,20 +35,35 @@ export const register = async (req: express.Request, res: express.Response) => {
     const user = await createUser({
       username,
       email,
+      avatarFileId,
       authentication: {
         salt,
         password: encryptedPassword,
       },
     });
+    uploadedAvatarFileId = undefined;
 
     delete user.authentication;
 
     return res.status(201).json(user).end();
   } catch (error) {
+    await cleanupUploadedAvatar(uploadedAvatarFileId);
     console.error(error);
     return res.sendStatus(400);
   }
 };
+
+async function cleanupUploadedAvatar(fileId: string | undefined) {
+  if (!fileId) {
+    return;
+  }
+
+  try {
+    await deleteAvatarFile(fileId);
+  } catch (error) {
+    console.error("Failed to clean up an unreferenced avatar.", error);
+  }
+}
 
 export const login = async (req: express.Request, res: express.Response) => {
   try {

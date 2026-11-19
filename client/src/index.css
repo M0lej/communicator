@@ -37,7 +37,10 @@
 }
 
 body {
-  background-color: #f8f7f2;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #1e293b;
 }
 
 input {
