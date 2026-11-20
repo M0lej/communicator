@@ -16,6 +16,7 @@ import { get } from "lodash";
 import { hashPassword, random } from "../lib/encryption";
 import { activeUsers } from "./ws";
 import { deleteAvatarFile } from "../lib/avatar";
+import { getChatsByUserId, IChat } from "../models/chat";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -86,6 +87,15 @@ export const deleteUser = async (
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+    }
+
+    const chats = await getChatsByUserId(userId as string);
+
+    if (chats) {
+      chats.map(async (chat: IChat) => {
+        chat.users = chat.users.filter((userId) => !userId.equals(user._id));
+        await chat.save();
+      });
     }
 
     await user.deleteOne();

@@ -25,9 +25,14 @@ export const getChats = async (req: express.Request, res: express.Response) => {
         const chatUsers: IUser[] = (await _getUsersByIds(chat.users)) ?? [];
         const latestMessage = await getLatestMessageByChatId(chat._id);
 
+        const userNames =
+          chatUsers.length == 1
+            ? ["Deleted user", chatUsers[0].username]
+            : chatUsers.map((chatUser) => chatUser.username);
+
         return {
           ...chat.toObject(),
-          userNames: chatUsers.map((chatUser) => chatUser.username),
+          userNames,
           latestMessage,
         };
       }),
@@ -83,7 +88,19 @@ export const getChatByUserIds = async (
 
     const chat = await _getChatByUserIds(userId as string, otherId as string);
 
-    return res.status(200).json(chat).end();
+    if (!chat) {
+      return res.status(200).json(null).end();
+    }
+
+    const chatUsers: IUser[] = (await _getUsersByIds(chat.users)) ?? [];
+
+    return res
+      .status(200)
+      .json({
+        ...chat.toObject(),
+        userNames: chatUsers.map((chatUser) => chatUser.username),
+      })
+      .end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);
@@ -127,7 +144,13 @@ export const createChat = async (
       return res.sendStatus(400);
     }
 
-    return res.status(200).json(chat).end();
+    return res
+      .status(200)
+      .json({
+        ...chat,
+        userNames: [currentUser.username, otherUser.username],
+      })
+      .end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(400);

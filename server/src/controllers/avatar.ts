@@ -17,28 +17,11 @@ export const getAvatar = async (
 
     const user = await getUserById(userId as string);
 
-    if (!user) {
-      return res.sendStatus(404);
-    }
-
-    if (!user.avatarFileId) {
-      res.setHeader("Content-Type", "image/png");
-      return res.sendFile(
-        path.join(__dirname, "../../public/default.png"),
-        (error) => {
-          if (error) {
-            console.error(error);
-            if (res.headersSent) {
-              res.destroy(error);
-            } else {
-              res.sendStatus(500);
-            }
-          }
-        },
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(user.avatarFileId)) {
+    if (
+      !user ||
+      (user && !user.avatarFileId) ||
+      (user && !mongoose.Types.ObjectId.isValid(user.avatarFileId))
+    ) {
       res.setHeader("Content-Type", "image/png");
       return res.sendFile(
         path.join(__dirname, "../../public/default.png"),

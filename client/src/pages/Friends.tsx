@@ -141,12 +141,10 @@ export default function Friends() {
     if (!user) return;
 
     const existingChat = await getChatByOtherId(friendUserId);
+    const chat = existingChat ?? (await createChat(user._id, friendUserId));
 
-    if (!existingChat) {
-      const newChat = await createChat(user._id, friendUserId);
-      navigate(`/chat/${newChat._id}`);
-    } else {
-      navigate(`/chat/${existingChat._id}`);
+    if (chat) {
+      navigate("/", { state: { selectedChat: chat } });
     }
   }
 
@@ -174,7 +172,9 @@ export default function Friends() {
         </button>
       </Form>
       <div className="mx-auto flex max-w-3xl flex-col gap-3 p-4 sm:p-8">
-        {foundUsers.length > 0 && <h1 className="mt-2 text-lg font-bold text-blue-950">Found users</h1>}
+        {foundUsers.length > 0 && (
+          <h1 className="mt-2 text-lg font-bold text-blue-950">Found users</h1>
+        )}
         {foundUsers.length > 0 &&
           foundUsers.map((foundUser) => (
             <UserContainer
@@ -201,7 +201,11 @@ export default function Friends() {
               key={`find_${foundUser._id}`}
             />
           ))}
-        {pendingFriendRequests.length > 0 && <h1 className="mt-4 text-lg font-bold text-blue-950">Pending friend requests</h1>}
+        {pendingFriendRequests.length > 0 && (
+          <h1 className="mt-4 text-lg font-bold text-blue-950">
+            Pending friend requests
+          </h1>
+        )}
         {pendingFriendRequests.length > 0 &&
           pendingFriendRequests.map((friendRequestUser) => (
             <UserContainer
@@ -245,7 +249,11 @@ export default function Friends() {
               key={`pending_${friendRequestUser._id}`}
             />
           ))}
-        {sentFriendRequests.length > 0 && <h1 className="mt-4 text-lg font-bold text-blue-950">Sent friend requests</h1>}
+        {sentFriendRequests.length > 0 && (
+          <h1 className="mt-4 text-lg font-bold text-blue-950">
+            Sent friend requests
+          </h1>
+        )}
         {sentFriendRequests.length > 0 &&
           sentFriendRequests.map((friendRequestUser) => (
             <UserContainer
