@@ -80,6 +80,10 @@ export async function register({ request }: { request: Request }) {
   }
 }
 
+export async function logout(): Promise<void> {
+  await axios.post("/api/auth/logout");
+}
+
 export async function getUserData() {
   try {
     const response = await axios({

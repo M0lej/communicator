@@ -15,7 +15,7 @@ import {
 import { get } from "lodash";
 import { hashPassword, random } from "../lib/encryption";
 import { activeUsers } from "./ws";
-import { deleteAvatarFile, uploadAvatarFromBuffer } from "../lib/avatar";
+import { deleteAvatarFile } from "../lib/avatar";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -85,7 +85,7 @@ export const deleteUser = async (
     const user: IUser = (await getUserById(userId as string)) as IUser;
 
     if (!user) {
-      return res.sendStatus(400);
+      return res.status(404).json({ message: "User not found" });
     }
 
     await user.deleteOne();

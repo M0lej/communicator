@@ -1,22 +1,27 @@
-import { Menu } from "@boxicons/react";
+import { Discussion, DoorOpenAlt, Group, Menu, User } from "@boxicons/react";
 import MenuLink from "./components/MenuLink";
 import { useEffect, useState, type ReactNode } from "react";
-import { getUserData } from "./api/auth";
+import { getUserData, logout } from "./api/auth";
 import { useUserContext } from "./providers/UserProvider";
 import { useWSContext } from "./providers/WSProvider";
 import { WSService } from "./api/ws";
 import { useNavigate } from "react-router-dom";
+import Popup from "./components/Popup";
 
 export default function PageContainer({ page }: { page?: ReactNode }) {
   const [expanded, setExpanded] = useState<boolean>(false);
   const navigate = useNavigate();
   const { user, setUser } = useUserContext();
   const [userLoaded, setUserLoaded] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { service, setService } = useWSContext();
   const hideMenu = () => setExpanded(false);
 
   useEffect(() => {
-    getUser();
+    if (!user) {
+      getUser();
+    }
   }, []);
 
   useEffect(() => {
@@ -59,24 +64,43 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
     setService(null);
   }
 
+  async function handleLogout() {
+    setLogoutError(null);
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+      setUser(null);
+      hideMenu();
+      navigate("/login");
+    } catch (error) {
+      console.error("Failed to log out", error);
+      setLogoutError("Unable to log out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
+
   return (
     <div className="grid h-dvh w-screen grid-cols-[auto_1fr] grid-rows-1 overflow-hidden bg-slate-50 max-sm:flex max-sm:flex-col">
-      {!service && userLoaded && (
-        <div className="absolute z-30 flex h-full w-full flex-col items-center justify-center bg-slate-950/30 px-6 backdrop-blur-sm">
-          <div className="rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-xl">
-            <p className="text-slate-700">
+      {!service && userLoaded && user !== null && (
+        <Popup
+          title={
+            <>
               <b>Oops!</b>
               <br />
-              Looks like you've lost connection to the server...
-            </p>
-            <button
-              className="my-4 cursor-pointer rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white shadow-md transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-              onClick={connectToWS}
-            >
-              Reconnect
-            </button>
-          </div>
-        </div>
+            </>
+          }
+          actions={[
+            {
+              label: "Reconnect",
+              onClick: connectToWS,
+              closeBeforeAction: true,
+            },
+          ]}
+        >
+          Looks like you've lost connection to the server...
+        </Popup>
       )}
       <button
         className={`
@@ -108,18 +132,20 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           overflow-hidden
           pt-20
           gap-1
-          z-10 border-blue-800
+          z-10
         `}
       >
-        <img
-          className="rounded-full aspect-square h-20 mb-5"
-          src={`/api/avatar/${user?._id}`}
-        />
         {user !== null && (
-          <h1 className="mb-3 w-full truncate px-3 text-center text-sm font-medium text-blue-100">
-            Logged in as{" "}
-            <span className="font-bold text-white">{user.username}</span>
-          </h1>
+          <>
+            <img
+              className="rounded-full aspect-square h-20 mb-5 drop-shadow-xl shadow-md"
+              src={`/api/avatar/${user?._id}`}
+            />
+            <h1 className="mb-3 w-full truncate px-3 text-center text-sm font-medium text-blue-100">
+              Logged in as{" "}
+              <span className="font-bold text-white">{user.username}</span>
+            </h1>
+          </>
         )}
 
         {user !== null && (
@@ -129,6 +155,7 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
               className="flex w-full justify-center py-4"
               onClick={hideMenu}
             >
+              <Discussion />
               Chats
             </MenuLink>
             <MenuLink
@@ -136,17 +163,26 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
               className="flex w-full justify-center py-4"
               onClick={hideMenu}
             >
+              <Group />
               Friends
             </MenuLink>
-            {user != null && (
-              <MenuLink
-                to={"/account"}
-                className="flex w-full justify-center py-4"
-                onClick={hideMenu}
-              >
-                Account
-              </MenuLink>
-            )}
+            <MenuLink
+              to={"/account"}
+              className="flex w-full justify-center py-4"
+              onClick={hideMenu}
+            >
+              <User />
+              Account
+            </MenuLink>
+            <button
+              type="button"
+              className="flex w-full cursor-pointer justify-center gap-2 rounded-lg border border-transparent px-4 py-4 text-center font-medium text-blue-100 transition-colors duration-150 hover:border-blue-500 hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              <DoorOpenAlt />
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </button>
           </>
         )}
 
@@ -158,6 +194,14 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           >
             Login
           </MenuLink>
+        )}
+        {logoutError && (
+          <p
+            className="w-full rounded-lg border border-red-200 bg-red-50 p-3 text-center text-sm font-medium text-red-800"
+            role="alert"
+          >
+            {logoutError}
+          </p>
         )}
       </section>
       {page}

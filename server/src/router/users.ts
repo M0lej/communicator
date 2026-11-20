@@ -31,6 +31,7 @@ export default function usersRouter(router: express.Router) {
     avatarUpload,
     updateUser,
   );
+  router.delete("/users/:userId/delete", isAuthenticated, isOwner, deleteUser);
   router.patch(
     "/users/:userId/password/",
     isAuthenticated,

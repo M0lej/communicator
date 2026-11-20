@@ -8,7 +8,7 @@ interface IUsersArrayResponse {
 }
 
 export type UsersIntent = "add" | "remove" | "pending_accept" | "pending_deny";
-export type UpdateUserIntent = "other" | "password";
+export type UpdateUserIntent = "other" | "delete" | "password";
 
 interface IUsersSingleResponse {
   intent: UsersIntent;
@@ -224,6 +224,22 @@ export async function updateUser({ request }: { request: Request }) {
           newPassword as string,
           confirmPassword as string,
         );
+      case "delete":
+        try {
+          await deleteUser(userId as string);
+          return {
+            intent: "delete",
+            success: true,
+            message: "Your account has been deleted successfully.",
+          };
+        } catch (error) {
+          console.error(error);
+          return {
+            intent: "delete",
+            success: false,
+            message: "Unable to delete your account. Please try again.",
+          };
+        }
       case "other":
         return await updateOther(
           userId as string,
@@ -254,6 +270,12 @@ export async function getUsersByIds(ids: string[]) {
     console.error(error);
     return null;
   }
+}
+
+async function deleteUser(userId: string) {
+  const response = await axios.delete(`/api/users/${userId}/delete`);
+
+  return response.data;
 }
 
 async function updateOther(userId: string, username?: string, avatar?: File) {

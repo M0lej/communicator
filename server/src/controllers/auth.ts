@@ -114,6 +114,34 @@ export const login = async (req: express.Request, res: express.Response) => {
   }
 };
 
+export const logout = async (req: express.Request, res: express.Response) => {
+  try {
+    const sessionToken = req.cookies["USER_AUTH"];
+    if (!sessionToken) {
+      return res.sendStatus(400);
+    }
+
+    const hashedSessionToken = hashSessionToken(sessionToken);
+
+    const user: IUserWithAuth = await getUserBySessionToken(
+      hashedSessionToken,
+    ).select("+authentication.sessionToken");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await user.updateOne({
+      $unset: { "authentication.sessionToken": 1 },
+    });
+    res.clearCookie("USER_AUTH");
+    return res.status(200).json({ message: "Logged out successfully" }).end();
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(403);
+  }
+};
+
 export const isLoggedIn = async (
   req: express.Request,
   res: express.Response,
@@ -130,7 +158,7 @@ export const isLoggedIn = async (
     const foundUser = await getUserBySessionToken(hashedSessionToken);
 
     if (!foundUser) {
-      return res.sendStatus(403);
+      return res.status(404).json({ message: "User not found" });
     }
 
     return res.status(200).json(foundUser).end();

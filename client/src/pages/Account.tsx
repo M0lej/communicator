@@ -1,19 +1,29 @@
-import { Check, EditAlt, Envelope, Key, User, X } from "@boxicons/react";
+import { Check, EditAlt, Envelope, Key, Trash, User, X } from "@boxicons/react";
 import { useUserContext } from "../providers/UserProvider";
 import { useEffect, useState } from "react";
-import { Form, Link, useActionData } from "react-router-dom";
+import { Form, Link, useActionData, useNavigate } from "react-router-dom";
 import AccountSettingsField from "../components/AccountSettingsField";
 import Input from "../components/Input";
 import Error, { isError, isUser } from "../components/Error";
+import Button from "../components/Button";
+import Popup from "../components/Popup";
 
 export default function Account() {
   const response = useActionData<unknown>();
+  const navigate = useNavigate();
   const { user, setUser } = useUserContext();
   const [isEditingUserName, toggleUserNameEditing] = useState(false);
   const [usernameInputValue, setUsernameInputValue] = useState(
     user?.username ?? "",
   );
   const [isEditingPassword, togglePasswordEditing] = useState(false);
+  const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  );
+  const [deleteSuccessMessage, setDeleteSuccessMessage] = useState<
+    string | null
+  >(null);
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
 
   useEffect(() => {
@@ -21,7 +31,16 @@ export default function Account() {
     togglePasswordEditing(false);
 
     if (response) {
-      if (isUser(response)) {
+      if (isDeleteResponse(response)) {
+        setDeleteConfirmationOpen(false);
+        setDeleteErrorMessage(null);
+        if (response.success) {
+          setUser(null);
+          setDeleteSuccessMessage(response.message);
+        } else {
+          setDeleteErrorMessage(response.message);
+        }
+      } else if (isUser(response)) {
         setErrorMessage(null);
         setUser(response);
         setUsernameInputValue(response.username);
@@ -180,8 +199,86 @@ export default function Account() {
               </div>
             </Form>
           </AccountSettingsField>
+          <Form method="post" action="/account">
+            <input type="hidden" name="userId" value={user?._id ?? ""} />
+            <input type="hidden" name="intent" value="delete" />
+            <Button
+              type="button"
+              onClick={() => {
+                setDeleteErrorMessage(null);
+                setDeleteSuccessMessage(null);
+                setDeleteConfirmationOpen(true);
+              }}
+              className="bg-red-500 flex gap-2 justify-center hover:bg-red-600 w-full"
+            >
+              <Trash />
+              Remove Account
+            </Button>
+            {isDeleteConfirmationOpen && (
+              <Popup
+                title="Are you sure you want to delete your account?"
+                onBackdropClick={() => setDeleteConfirmationOpen(false)}
+                actions={[
+                  {
+                    label: "Yes",
+                    icon: <Trash />,
+                    type: "submit",
+                    variant: "danger",
+                  },
+                  {
+                    label: "No",
+                    icon: <X />,
+                    onClick: () => setDeleteConfirmationOpen(false),
+                    variant: "secondary",
+                    autoFocus: true,
+                  },
+                ]}
+              />
+            )}
+          </Form>
+          {deleteErrorMessage && (
+            <Popup
+              title="Unable to delete account"
+              actions={[
+                {
+                  label: "OK",
+                  onClick: () => setDeleteErrorMessage(null),
+                },
+              ]}
+            >
+              {deleteErrorMessage}
+            </Popup>
+          )}
+          {deleteSuccessMessage && (
+            <Popup
+              title="Account deleted"
+              actions={[
+                {
+                  label: "Go to login",
+                  onClick: () => navigate("/login"),
+                },
+              ]}
+            >
+              {deleteSuccessMessage}
+            </Popup>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function isDeleteResponse(
+  value: unknown,
+): value is { intent: "delete"; success: boolean; message: string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "intent" in value &&
+    value.intent === "delete" &&
+    "success" in value &&
+    typeof value.success === "boolean" &&
+    "message" in value &&
+    typeof value.message === "string"
   );
 }
