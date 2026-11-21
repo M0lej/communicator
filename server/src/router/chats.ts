@@ -5,7 +5,6 @@ import {
   getChat,
   getChatByUserIds,
 } from "../controllers/chats";
-import { WSHandler } from "../controllers/ws";
 import { isAuthenticated, isOwner } from "../middlewares/auth";
 
 export function chatsRouter(router: expressWs.Router) {

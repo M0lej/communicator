@@ -15,10 +15,12 @@ import {
 } from "../api/messages";
 import ChatBubble from "../components/ChatBubble";
 import Button from "../components/Button";
-import { MessageCircleDots, Send, X } from "@boxicons/react";
+import { Fullscreen, FullscreenExit, Send, X } from "@boxicons/react";
+import IconButton from "../components/IconButton";
 import { useWSContext } from "../providers/WSProvider";
 import type { IWSIncomingMessage, IWSIncomingTyping } from "../api/ws";
 import TextArea from "../components/TextArea";
+import TypingIndicator from "../components/TypingIndicator";
 import { clamp } from "../utilities/clamp";
 
 function isAtPageBottom() {
@@ -35,11 +37,13 @@ export interface IChatMethodsRef {
 
 interface IChatProps {
   chat: IChat;
+  isFullscreen: boolean;
+  changeFullscreenState: () => void;
   hideChat: () => void;
 }
 
 const Chat = forwardRef<IChatMethodsRef, IChatProps>(
-  ({ chat, hideChat }, ref) => {
+  ({ chat, hideChat, isFullscreen, changeFullscreenState }, ref) => {
     const { user } = useUserContext();
 
     const [otherUsername, setOtherUsername] = useState<string>("other user");
@@ -101,10 +105,14 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
 
     function setOtherUserInfo() {
       if (!user) return;
-      setOtherUserId(chat.users.find((id) => id !== user._id) ?? null);
+      const otherUserId = Array.isArray(chat.users)
+        ? (chat.users.find((id) => id !== user._id) ?? null)
+        : null;
+      setOtherUserId(otherUserId);
       setOtherUsername(
-        chat.userNames.find((username) => username != user.username) ??
-          "other user",
+        (Array.isArray(chat.userNames)
+          ? chat.userNames.find((username) => username !== user.username)
+          : undefined) ?? "other user",
       );
     }
 
@@ -208,19 +216,53 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
       );
     }
 
+    function onMessageKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+      if (event.key !== "Enter" || event.shiftKey) return;
+
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    }
+
     if (!chat) return null;
 
     return (
       <>
         <div className="relative flex h-16 w-full shrink-0 items-center justify-center border-b border-blue-100 bg-white px-14 text-lg font-semibold text-blue-950 shadow-sm">
-          <button
-            className="absolute right-5 cursor-pointer rounded-lg p-2 text-blue-700 transition hover:bg-blue-50 hover:text-blue-900 sm:left-5 sm:right-auto"
+          <IconButton
+            className={
+              isFullscreen
+                ? "absolute right-5"
+                : "absolute right-5 sm:left-5 sm:right-auto"
+            }
             onClick={hideChat}
             aria-label="Close chat"
+            icon={<X />}
+          />
+          <h1 className="flex gap-2">{otherUsername}</h1>
+          <div
+            className={`absolute right-20 top-1/2 flex -translate-y-1/2 items-center gap-2 ${
+              isFullscreen ? "sm:right-20" : "sm:right-5"
+            }`}
           >
-            <X />
-          </button>
-          {otherUsername}
+            {isTyping && (
+              <TypingIndicator
+                label={`${otherUsername} is typing`}
+                color="blue"
+              />
+            )}
+            <IconButton
+              className="max-sm:hidden"
+              onClick={changeFullscreenState}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              icon={
+                isFullscreen ? (
+                  <FullscreenExit />
+                ) : (
+                  <Fullscreen className="fill-blue-700" />
+                )
+              }
+            />
+          </div>
         </div>
         <div
           className="flex h-full min-h-0 flex-col gap-3 overflow-x-hidden overflow-y-auto bg-slate-50 px-4 py-4 sm:px-6"
@@ -238,17 +280,11 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
               </ChatBubble>
             );
           })}
-          {isTyping && (
-            <p className="mt-2 flex items-center text-sm text-blue-600 animate-pulse">
-              {otherUsername} is typing
-              <MessageCircleDots className="ml-2 fill-blue-500" />
-            </p>
-          )}
           <div ref={bottomRef} />
         </div>
-
+        {}
         <form
-          className="grid h-fit w-full shrink-0 grid-cols-[1fr_auto] gap-2 border-t border-blue-100 bg-white p-3 sm:p-4"
+          className={`grid h-fit w-full shrink-0 grid-cols-[1fr_auto] gap-2 border-t border-blue-100 bg-white p-3 sm:p-4 `}
           onSubmit={sendMessage}
         >
           <TextArea
@@ -260,6 +296,7 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
             onFocus={onInputFocus}
             onBlur={onInputBlur}
             onChange={onInputChange}
+            onKeyDown={onMessageKeyDown}
             style={{ resize: "none" }}
           />
           <Button className="flex h-full items-center gap-2" type="submit">

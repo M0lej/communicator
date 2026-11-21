@@ -14,6 +14,9 @@ import {
 } from "../models/user";
 import { get } from "lodash";
 import { hashPassword, random } from "../lib/encryption";
+import { activeUsers } from "./ws";
+import { deleteAvatarFile } from "../lib/avatar";
+import { getChatsByUserId, IChat } from "../models/chat";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -83,7 +86,16 @@ export const deleteUser = async (
     const user: IUser = (await getUserById(userId as string)) as IUser;
 
     if (!user) {
-      return res.sendStatus(400);
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const chats = await getChatsByUserId(userId as string);
+
+    if (chats) {
+      chats.map(async (chat: IChat) => {
+        chat.users = chat.users.filter((userId) => !userId.equals(user._id));
+        await chat.save();
+      });
     }
 
     await user.deleteOne();
@@ -99,27 +111,77 @@ export const updateUser = async (
   req: express.Request,
   res: express.Response,
 ) => {
+  let uploadedAvatarFileId: string | undefined;
   try {
     const { userId } = req.params;
-    const { username } = req.body;
+    const { username, avatarFileId } = req.body ?? {};
+    uploadedAvatarFileId = avatarFileId;
 
-    if (!userId || !username) {
+    if (!userId) {
       return res.sendStatus(400);
     }
 
     const user: IUser | null = await getUserById(userId as string);
 
     if (!user) {
-      return res.sendStatus(400);
+      if (uploadedAvatarFileId) {
+        try {
+          await deleteAvatarFile(uploadedAvatarFileId);
+        } catch (cleanupError) {
+          console.error(
+            "Failed to clean up an unreferenced avatar.",
+            cleanupError,
+          );
+        }
+        uploadedAvatarFileId = undefined;
+      }
+
+      return res.sendStatus(404);
     }
 
-    user.username = username;
+    if (username) {
+      if (username.length < 3 || username.length > 20) {
+        return res
+          .status(400)
+          .send("Username must be between 3 and 20 characters long.")
+          .end();
+      }
+      user.username = username;
+    }
+
+    if (avatarFileId) {
+      const previousAvatarFileId = user.avatarFileId;
+      if (previousAvatarFileId && previousAvatarFileId !== avatarFileId) {
+        try {
+          await deleteAvatarFile(previousAvatarFileId);
+        } catch (error) {
+          console.error(
+            "Failed to remove the previous avatar from GridFS.",
+            error,
+          );
+        }
+      }
+
+      user.avatarFileId = avatarFileId;
+    }
+
     const updatedUser = await user.save();
 
     return res.status(200).json(updatedUser).end();
   } catch (error) {
+    if (uploadedAvatarFileId) {
+      try {
+        await deleteAvatarFile(uploadedAvatarFileId);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up an unreferenced avatar.",
+          cleanupError,
+        );
+      }
+    }
+
     console.error(error);
-    return res.sendStatus(403);
+    return res.sendStatus(500);
   }
 };
 
@@ -153,7 +215,7 @@ export const updatePassword = async (
     if (hashedPasswordWithOldSalt == user.authentication.password) {
       return res
         .status(400)
-        .json({ error: "Old password and new password are the same." })
+        .json({ message: "Old password and new password are the same." })
         .end();
     }
 
@@ -173,13 +235,60 @@ export const getFriends = async (
   res: express.Response,
 ) => {
   try {
-    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+    const userId: string = get(req, "identity._id") as unknown as string;
 
-    if (!currentUser) {
+    if (!userId) {
       return res.sendStatus(400);
     }
 
-    const users: IUser[] = (await _getFriends(currentUser)) ?? [];
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const friends: IUser[] = (await _getFriends(user)) ?? [];
+    const activeFriends: IUser[] = friends.filter((friend: IUser) =>
+      activeUsers.has(friend._id.toString()),
+    );
+
+    const extendedUsersObjects = await Promise.all(
+      friends.map(async (friend: IUser) => {
+        return {
+          ...friend.toObject(),
+          status: activeFriends.includes(friend),
+        };
+      }),
+    );
+
+    return res.status(200).json(extendedUsersObjects);
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(400);
+  }
+};
+
+export const getActiveFriends = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const userId: string = get(req, "identity._id") as unknown as string;
+
+    if (!userId) {
+      return res.sendStatus(400);
+    }
+
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const users: IUser[] =
+      (await _getFriends(user)).filter((friend) =>
+        activeUsers.has(friend._id.toString()),
+      ) ?? [];
 
     return res.status(200).json(users);
   } catch (error) {
@@ -193,13 +302,19 @@ export const getSentFriendRequests = async (
   res: express.Response,
 ) => {
   try {
-    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+    const userId: string = get(req, "identity._id") as unknown as string;
 
-    if (!currentUser) {
+    if (!userId) {
       return res.sendStatus(400);
     }
 
-    const users: IUser[] = (await _getSentFriendRequests(currentUser)) ?? [];
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const users: IUser[] = (await _getSentFriendRequests(user)) ?? [];
 
     return res.status(200).json(users);
   } catch (error) {
@@ -213,13 +328,19 @@ export const getPendingFriendRequests = async (
   res: express.Response,
 ) => {
   try {
-    const currentUser: IUser = get(req, "identity") as unknown as IUser;
+    const userId: string = get(req, "identity._id") as unknown as string;
 
-    if (!currentUser) {
+    if (!userId) {
       return res.sendStatus(400);
     }
 
-    const users: IUser[] = (await _getPendingFriendRequests(currentUser)) ?? [];
+    const user = await getUserById(userId);
+
+    if (!user) {
+      return res.sendStatus(403);
+    }
+
+    const users: IUser[] = (await _getPendingFriendRequests(user)) ?? [];
 
     return res.status(200).json(users);
   } catch (error) {

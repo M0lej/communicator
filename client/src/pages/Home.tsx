@@ -18,6 +18,7 @@ import { clamp } from "../utilities/clamp";
 import { getFriends, type IUserWithStatus } from "../api/users";
 
 import UsersStatusIndicator from "../components/UsersStatusIndicator";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Home() {
   const [chats, setChats] = useState<IChatWithTypingInfo[]>([]);
@@ -29,6 +30,25 @@ export default function Home() {
   const [friends, setFriends] = useState<IUserWithStatus[]>([]);
   const [chatWidth, setChatWidth] = useState<number | null>();
   const [isResizingChat, setIsResizingChat] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isChatFullscreen, setIsChatFullscreen] = useState(false);
+
+  useEffect(() => {
+    const state = location.state as { selectedChat?: IChat } | null;
+    const chat = state?.selectedChat;
+
+    if (!chat) return;
+
+    setSelectedChat(chat);
+    setChats((currentChats) =>
+      currentChats.some((item) => item._id === chat._id)
+        ? currentChats
+        : [...currentChats, { ...chat, isTyping: false }],
+    );
+
+    navigate("/", { replace: true, state: null });
+  }, [location.state, navigate]);
 
   useEffect(() => {
     if (!service) {
@@ -187,6 +207,9 @@ export default function Home() {
     setSelectedChat(newChat);
   }
 
+  function changeChatFullscreenState() {
+    setIsChatFullscreen((isChatFullscreen) => !isChatFullscreen);
+  }
   return (
     <div
       ref={homeContainerRef}
@@ -230,8 +253,12 @@ export default function Home() {
       </section>
       {selectedChat && (
         <section
-          className="absolute inset-y-0 right-0 flex h-full min-h-0 w-1/2 origin-right flex-col border-l border-slate-200 bg-white shadow-lg max-sm:w-full"
-          style={chatWidth ? { width: `${chatWidth}px` } : undefined}
+          className={`absolute inset-y-0 right-0 flex h-full min-h-0 w-1/2 origin-right flex-col border-l border-slate-200 bg-white shadow-lg max-sm:w-full ${isChatFullscreen && "w-full"} transition-all`}
+          style={
+            chatWidth && !isChatFullscreen
+              ? { width: `${chatWidth}px` }
+              : undefined
+          }
         >
           <div
             className="absolute inset-y-0 -left-5 z-10 hidden w-10 touch-none cursor-col-resize select-none md:block"
@@ -245,6 +272,8 @@ export default function Home() {
             chat={selectedChat}
             ref={selectedChatMethodsRef}
             hideChat={hideChat}
+            isFullscreen={isChatFullscreen}
+            changeFullscreenState={changeChatFullscreenState}
           />
         </section>
       )}

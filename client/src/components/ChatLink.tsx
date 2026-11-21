@@ -2,6 +2,7 @@ import type { IChatWithTypingInfo } from "../api/chats";
 import { useUserContext } from "../providers/UserProvider";
 import type { IMessage } from "../api/messages";
 import type { ButtonHTMLAttributes } from "react";
+import TypingIndicator from "./TypingIndicator";
 import { apiUrl } from "../api/client";
 
 interface IChatLink extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -41,14 +42,19 @@ export default function ChatLink({
       <div className="min-w-0 flex flex-col text-left">
         <h2 className="truncate font-semibold text-slate-800">{label}</h2>
         <p className="max-w-full truncate text-xs text-slate-500">
-          {chat.isTyping
-            ? `${label} is typing...`
-            : latestMessage && (
-                <>
-                  {latestMessage.sender == user?._id ? "You: " : `${label}: `}
-                  {latestMessage.content}
-                </>
-              )}
+          {chat.isTyping ? (
+            <TypingIndicator
+              label={`${label} is typing`}
+              className="scale-[0.8] origin-left align-middle"
+            />
+          ) : (
+            latestMessage && (
+              <>
+                {latestMessage.sender == user?._id ? "You: " : `${label}: `}
+                {latestMessage.content}
+              </>
+            )
+          )}
         </p>
       </div>
     </button>

@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IUser extends Document {
   username: string;
   email: string;
+  avatarFileId: string;
   sentFriendRequests: mongoose.Types.ObjectId[];
   pendingFriendRequests: mongoose.Types.ObjectId[];
   friends: mongoose.Types.ObjectId[];
@@ -27,6 +28,7 @@ export interface IUserWithAuth extends IUser {
 const UserSchema: Schema = new mongoose.Schema({
   username: { type: String, required: true },
   email: { type: String, required: true },
+  avatarFileId: { type: String },
   sentFriendRequests: [{ type: Schema.ObjectId, ref: "User" }],
   pendingFriendRequests: [{ type: Schema.ObjectId, ref: "User" }],
   friends: [{ type: Schema.ObjectId, ref: "User" }],
