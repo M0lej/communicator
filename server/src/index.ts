@@ -11,10 +11,12 @@ const app = express();
 const server = http.createServer(app);
 const ws = expressWs(app, server);
 const port = Number(process.env.PORT) || 8080;
+const configuredClientOrigin = process.env.CLIENT_ORIGIN?.replace(/\/+$/, "");
 const corsOptions = {
   origin: [
     "http://localhost:5173",
-    process.env.CLIENT_ORIGIN,
+    "https://molejcommunicator.netlify.app",
+    configuredClientOrigin,
   ].filter((origin): origin is string => Boolean(origin)),
   credentials: true,
 };
