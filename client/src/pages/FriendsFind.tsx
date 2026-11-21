@@ -7,40 +7,40 @@ export default function FriendsFind() {
   const response = useActionData<IUser[] | null>();
 
   return (
-    <div className="h-full w-full bg-blue-500">
+    <div className="h-full w-full overflow-y-auto bg-slate-50">
       <Form
-        className="search w-full h-15 bg-red-400 flex justify-center items-center gap-2"
+        className="flex h-16 w-full items-center justify-center gap-2 border-b border-slate-200 bg-white px-4"
         action="/friends/find"
         method="post"
       >
         <Input
-          className="max-w-100 w-[60%]"
+          className="w-[60%] max-w-lg bg-white"
           placeholder="Search..."
           name="userName"
           id="userName"
           required
         />
         <button
-          className="flex items-center justify-center h-10 aspect-square bg-white rounded-lg cursor-pointer"
+          className="flex h-10 aspect-square items-center justify-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700"
           type="submit"
         >
           <Search className="" />
         </button>
       </Form>
       {response === null ? (
-        <p className="p-4">Nie udało się wyszukać użytkowników.</p>
+        <p className="p-6 text-center text-red-600">Nie udało się wyszukać użytkowników.</p>
       ) : response ? (
         response.length > 0 ? (
-          <ul className="flex flex-col gap-2 p-4">
+          <ul className="mx-auto flex max-w-3xl flex-col gap-3 p-4 sm:p-8">
             {response.map((foundUser) => (
-              <li key={foundUser._id} className="rounded-lg bg-white p-3">
-                <p>{foundUser.username}</p>
-                <p>{foundUser.email}</p>
+              <li key={foundUser._id} className="rounded-xl border border-blue-100 bg-white p-4 shadow-sm">
+                <p className="font-semibold text-blue-950">{foundUser.username}</p>
+                <p className="text-sm text-slate-500">{foundUser.email}</p>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="p-4">Nie znaleziono użytkowników.</p>
+          <p className="p-6 text-center text-slate-500">Nie znaleziono użytkowników.</p>
         )
       ) : null}
     </div>

@@ -7,18 +7,34 @@ import {
 } from "../models/user";
 import { hashPassword, hashSessionToken, random } from "../lib/encryption";
 import { get } from "lodash";
+import { deleteAvatarFile } from "../lib/avatar";
+
+const isProduction = process.env.NODE_ENV === "production";
+const sessionCookieOptions = {
+  httpOnly: true,
+  sameSite: isProduction ? ("none" as const) : ("lax" as const),
+  secure: isProduction,
+  path: "/",
+  maxAge: 5 * 24 * 60 * 60 * 100,
+};
 
 export const register = async (req: express.Request, res: express.Response) => {
+  let uploadedAvatarFileId: string | undefined;
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, avatarFileId } = req.body ?? {};
+    uploadedAvatarFileId = avatarFileId;
 
     if (!username || !email || !password) {
+      await cleanupUploadedAvatar(uploadedAvatarFileId);
+      uploadedAvatarFileId = undefined;
       return res.sendStatus(400);
     }
 
     const foundUser = await getUserByEmail(email);
 
     if (foundUser) {
+      await cleanupUploadedAvatar(uploadedAvatarFileId);
+      uploadedAvatarFileId = undefined;
       return res.sendStatus(400);
     }
 
@@ -28,20 +44,35 @@ export const register = async (req: express.Request, res: express.Response) => {
     const user = await createUser({
       username,
       email,
+      avatarFileId,
       authentication: {
         salt,
         password: encryptedPassword,
       },
     });
+    uploadedAvatarFileId = undefined;
 
     delete user.authentication;
 
     return res.status(201).json(user).end();
   } catch (error) {
+    await cleanupUploadedAvatar(uploadedAvatarFileId);
     console.error(error);
     return res.sendStatus(400);
   }
 };
+
+async function cleanupUploadedAvatar(fileId: string | undefined) {
+  if (!fileId) {
+    return;
+  }
+
+  try {
+    await deleteAvatarFile(fileId);
+  } catch (error) {
+    console.error("Failed to clean up an unreferenced avatar.", error);
+  }
+}
 
 export const login = async (req: express.Request, res: express.Response) => {
   try {
@@ -62,7 +93,9 @@ export const login = async (req: express.Request, res: express.Response) => {
     const encryptedPassword = hashPassword(user.authentication.salt, password);
 
     if (encryptedPassword !== user.authentication.password) {
-      return res.sendStatus(403);
+      return res.status(403).json({
+        message: "Invalid email or password",
+      });
     }
 
     const sessionToken = random();
@@ -72,18 +105,40 @@ export const login = async (req: express.Request, res: express.Response) => {
       "authentication.sessionToken": hashedSessionToken,
     });
 
-    res.cookie("USER_AUTH", sessionToken, {
-      httpOnly: true,
-      domain: "localhost",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 5 * 24 * 60 * 60 * 100,
-    });
+    res.cookie("USER_AUTH", sessionToken, sessionCookieOptions);
 
     const userRes = user.toObject();
     delete userRes.authentication;
 
     return res.status(200).json(userRes).end();
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(403);
+  }
+};
+
+export const logout = async (req: express.Request, res: express.Response) => {
+  try {
+    const sessionToken = req.cookies["USER_AUTH"];
+    if (!sessionToken) {
+      return res.sendStatus(400);
+    }
+
+    const hashedSessionToken = hashSessionToken(sessionToken);
+
+    const user: IUserWithAuth = await getUserBySessionToken(
+      hashedSessionToken,
+    ).select("+authentication.sessionToken");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await user.updateOne({
+      $unset: { "authentication.sessionToken": 1 },
+    });
+    res.clearCookie("USER_AUTH", { path: "/" });
+    return res.status(200).json({ message: "Logged out successfully" }).end();
   } catch (error) {
     console.error(error);
     return res.sendStatus(403);
@@ -106,7 +161,7 @@ export const isLoggedIn = async (
     const foundUser = await getUserBySessionToken(hashedSessionToken);
 
     if (!foundUser) {
-      return res.sendStatus(403);
+      return res.status(404).json({ message: "User not found" });
     }
 
     return res.status(200).json(foundUser).end();
@@ -143,13 +198,7 @@ export const restoreSession = async (
       "authentication.sessionToken": newHashedSessionToken,
     });
 
-    res.cookie("USER_AUTH", newSessionToken, {
-      httpOnly: true,
-      domain: "localhost",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 5 * 24 * 60 * 60 * 100,
-    });
+    res.cookie("USER_AUTH", newSessionToken, sessionCookieOptions);
 
     const userRes = user.toObject();
 

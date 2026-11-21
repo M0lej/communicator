@@ -1,4 +1,4 @@
-import axios from "axios";
+import { api } from "./client";
 import type { IUser } from "../providers/UserProvider";
 import { comparePassword } from "./auth";
 
@@ -8,11 +8,15 @@ interface IUsersArrayResponse {
 }
 
 export type UsersIntent = "add" | "remove" | "pending_accept" | "pending_deny";
-export type UpdateUserIntent = "username" | "password";
+export type UpdateUserIntent = "other" | "delete" | "password";
 
 interface IUsersSingleResponse {
   intent: UsersIntent;
   data: IUser;
+}
+
+export interface IUserWithStatus extends IUser {
+  status: boolean;
 }
 
 export type UsersResponse = IUsersArrayResponse | IUsersSingleResponse;
@@ -68,7 +72,7 @@ async function findUsers(userName: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: `/api/users/find/${encodeURIComponent(String(userName))}`,
     });
@@ -86,7 +90,7 @@ async function sendFriendRequest(userId: string, otherId: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/users/${userId}/friends/add/${otherId}`,
     });
@@ -104,7 +108,7 @@ async function acceptFriendRequest(userId: string, otherId: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/users/${userId}/friends/accept/${otherId}`,
     });
@@ -122,7 +126,7 @@ async function denyFriendRequest(userId: string, otherId: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/users/${userId}/friends/deny/${otherId}`,
     });
@@ -140,7 +144,7 @@ async function removeFriend(userId: string, otherId: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "DELETE",
       url: `/api/users/${userId}/friends/remove/${otherId}`,
     });
@@ -154,7 +158,7 @@ async function removeFriend(userId: string, otherId: string) {
 
 export async function getFriends() {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: "/api/users/me/friends",
     });
@@ -168,7 +172,7 @@ export async function getFriends() {
 
 export async function getSentFriendRequests() {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: "/api/users/me/friends/requests/sent",
     });
@@ -182,7 +186,7 @@ export async function getSentFriendRequests() {
 
 export async function getPendingFriendRequests() {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: "/api/users/me/friends/requests/pending",
     });
@@ -205,6 +209,7 @@ export async function updateUser({ request }: { request: Request }) {
       oldPassword,
       newPassword,
       confirmPassword,
+      avatar,
     } = data;
 
     if (!intent) {
@@ -212,8 +217,6 @@ export async function updateUser({ request }: { request: Request }) {
     }
 
     switch (intent as UpdateUserIntent) {
-      case "username":
-        return await updateUsername(userId as string, username as string);
       case "password":
         return await updatePassword(
           userId as string,
@@ -221,8 +224,28 @@ export async function updateUser({ request }: { request: Request }) {
           newPassword as string,
           confirmPassword as string,
         );
-      default:
-        return null;
+      case "delete":
+        try {
+          await deleteUser(userId as string);
+          return {
+            intent: "delete",
+            success: true,
+            message: "Your account has been deleted successfully.",
+          };
+        } catch (error) {
+          console.error(error);
+          return {
+            intent: "delete",
+            success: false,
+            message: "Unable to delete your account. Please try again.",
+          };
+        }
+      case "other":
+        return await updateOther(
+          userId as string,
+          username as string,
+          avatar instanceof File && avatar.size > 0 ? avatar : undefined,
+        );
     }
   } catch (error) {
     console.error(error);
@@ -234,7 +257,7 @@ export async function getUsersByIds(ids: string[]) {
   try {
     if (!ids) return null;
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/users/ids`,
       data: {
@@ -249,16 +272,22 @@ export async function getUsersByIds(ids: string[]) {
   }
 }
 
-async function updateUsername(userId: string, username: string) {
-  if (!userId || !username) return null;
+async function deleteUser(userId: string) {
+  const response = await api.delete(`/api/users/${userId}/delete`);
 
-  const response = await axios({
-    method: "PATCH",
-    url: `/api/users/${encodeURIComponent(userId as string)}`,
-    data: {
-      username,
-    },
-  });
+  return response.data;
+}
+
+async function updateOther(userId: string, username?: string, avatar?: File) {
+  const formData = new FormData();
+
+  if (username) formData.append("username", username);
+  if (avatar) formData.append("avatar", avatar);
+
+  const response = await api.patch(
+    `/api/users/${encodeURIComponent(userId)}`,
+    formData,
+  );
 
   return response.data;
 }
@@ -272,7 +301,7 @@ async function updatePassword(
   if (!userId || !oldPassword || !newPassword || !confirmPassword) return null;
 
   if (newPassword != confirmPassword) {
-    return { error: "Passwords doesn't match." };
+    return { message: "Passwords doesn't match." };
   }
 
   const isOldPasswordCorrect = await comparePassword(
@@ -281,10 +310,10 @@ async function updatePassword(
   );
 
   if (!isOldPasswordCorrect) {
-    return { error: "Incorrect old password." };
+    return { message: "Incorrect old password." };
   }
 
-  const response = await axios({
+  const response = await api({
     method: "PATCH",
     url: `/api/users/${encodeURIComponent(userId as string)}/password`,
     data: {

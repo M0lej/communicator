@@ -151,30 +151,30 @@ export default function Friends() {
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full overflow-y-auto bg-slate-50">
       <Form
-        className="search w-full h-15 bg-red-400 flex justify-center items-center gap-2"
+        className="sticky top-0 z-10 flex h-16 w-full items-center justify-center gap-2 border-b border-slate-200 bg-white px-4"
         method="POST"
         action="/friends"
       >
         <input type="hidden" hidden name="intent" value="find" />
         <input type="hidden" hidden name="userId" value={user?._id ?? ""} />
         <Input
-          className="max-w-100 w-[60%]"
+          className="w-[60%] max-w-lg bg-white"
           placeholder="Search..."
           name="userName"
           id="userName"
           required
         />
         <button
-          className="flex items-center justify-center h-10 aspect-square bg-white rounded-lg cursor-pointer"
+          className="flex h-10 aspect-square items-center justify-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           type="submit"
         >
           <Search className="" />
         </button>
       </Form>
-      <div className="flex flex-col gap-2 p-4">
-        {foundUsers.length > 0 && <h1>Found users</h1>}
+      <div className="mx-auto flex max-w-3xl flex-col gap-3 p-4 sm:p-8">
+        {foundUsers.length > 0 && <h1 className="mt-2 text-lg font-bold text-blue-950">Found users</h1>}
         {foundUsers.length > 0 &&
           foundUsers.map((foundUser) => (
             <UserContainer
@@ -201,7 +201,7 @@ export default function Friends() {
               key={`find_${foundUser._id}`}
             />
           ))}
-        {pendingFriendRequests.length > 0 && <h1>Pending friend requests</h1>}
+        {pendingFriendRequests.length > 0 && <h1 className="mt-4 text-lg font-bold text-blue-950">Pending friend requests</h1>}
         {pendingFriendRequests.length > 0 &&
           pendingFriendRequests.map((friendRequestUser) => (
             <UserContainer
@@ -245,7 +245,7 @@ export default function Friends() {
               key={`pending_${friendRequestUser._id}`}
             />
           ))}
-        {sentFriendRequests.length > 0 && <h1>Sent friend requests</h1>}
+        {sentFriendRequests.length > 0 && <h1 className="mt-4 text-lg font-bold text-blue-950">Sent friend requests</h1>}
         {sentFriendRequests.length > 0 &&
           sentFriendRequests.map((friendRequestUser) => (
             <UserContainer
@@ -253,15 +253,16 @@ export default function Friends() {
               key={`sent_${friendRequestUser._id}`}
             />
           ))}
-        <h1>Your friends</h1>
+        <h1 className="mt-4 text-lg font-bold text-blue-950">Your friends</h1>
         {friends.length > 0 &&
           friends.map((friendUser) => (
             <UserContainer
               username={friendUser.username}
               buttons={
                 <button
-                  className="cursor-pointer"
+                  className="cursor-pointer rounded-lg p-2 text-blue-700 transition hover:bg-blue-100 hover:text-blue-900"
                   onClick={() => openChat(friendUser._id)}
+                  aria-label={`Start chat with ${friendUser.username}`}
                 >
                   <Discussion />
                 </button>

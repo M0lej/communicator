@@ -1,4 +1,4 @@
-import axios from "axios";
+import { api } from "./client";
 
 export interface IMessage {
   _id: string;
@@ -22,7 +22,7 @@ export type WStyping = {
 
 export async function getLatestMessages(userId: string, chatId: string) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "get",
       url: `/api/messages/${userId}/${chatId}`,
     });
@@ -36,7 +36,7 @@ export async function getLatestMessages(userId: string, chatId: string) {
 
 export async function getLatestMessage(chatId: string) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "get",
       url: `/api/messages/one/${chatId}`,
     });
@@ -54,7 +54,7 @@ export async function getOlderMessages(
   startIndex: number,
 ) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: `/api/messages/${userId}/${chatId}/${startIndex}`,
     });

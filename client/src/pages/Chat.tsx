@@ -17,7 +17,7 @@ import ChatBubble from "../components/ChatBubble";
 import Button from "../components/Button";
 import { MessageCircleDots, Send, X } from "@boxicons/react";
 import { useWSContext } from "../providers/WSProvider";
-import type { WSIncomingMessage, WSIncomingTyping } from "../api/ws";
+import type { IWSIncomingMessage, IWSIncomingTyping } from "../api/ws";
 import TextArea from "../components/TextArea";
 import { clamp } from "../utilities/clamp";
 
@@ -29,8 +29,8 @@ function isAtPageBottom() {
 }
 
 export interface IChatMethodsRef {
-  receiveNewMessage: (data: WSIncomingMessage) => void;
-  receiveNewTypingStatus: (data: WSIncomingTyping) => void;
+  receiveNewMessage: (data: IWSIncomingMessage) => void;
+  receiveNewTypingStatus: (IWSIncomingMessage: IWSIncomingTyping) => void;
 }
 
 interface IChatProps {
@@ -164,7 +164,7 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
     }
 
     function scrollToBottom() {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      bottomRef.current?.scrollIntoView();
     }
 
     const sendMessage: SubmitEventHandler<HTMLFormElement> = (event) => {
@@ -212,17 +212,18 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
 
     return (
       <>
-        <div className="w-full h-16 flex items-center justify-center relative">
+        <div className="relative flex h-16 w-full shrink-0 items-center justify-center border-b border-blue-100 bg-white px-14 text-lg font-semibold text-blue-950 shadow-sm">
           <button
-            className="sm:left-6 max-sm:right-6 max-sm absolute cursor-pointer"
+            className="absolute right-5 cursor-pointer rounded-lg p-2 text-blue-700 transition hover:bg-blue-50 hover:text-blue-900 sm:left-5 sm:right-auto"
             onClick={hideChat}
+            aria-label="Close chat"
           >
             <X />
           </button>
           {otherUsername}
         </div>
         <div
-          className="flex flex-col gap-2 overflow-y-scroll h-full overflow-x-hidden pb-2 px-2"
+          className="flex h-full min-h-0 flex-col gap-3 overflow-x-hidden overflow-y-auto bg-slate-50 px-4 py-4 sm:px-6"
           ref={chatRef}
         >
           {messages.map((message, i) => {
@@ -238,16 +239,16 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
             );
           })}
           {isTyping && (
-            <p className="flex mt-2 text-gray-500 animate-pulse">
+            <p className="mt-2 flex items-center text-sm text-blue-600 animate-pulse">
               {otherUsername} is typing
-              <MessageCircleDots className="fill-gray-500 ml-2" />
+              <MessageCircleDots className="ml-2 fill-blue-500" />
             </p>
           )}
           <div ref={bottomRef} />
         </div>
 
         <form
-          className="w-full bottom-0 h-fit grid grid-cols-[1fr_auto] p-2 gap-2"
+          className="grid h-fit w-full shrink-0 grid-cols-[1fr_auto] gap-2 border-t border-blue-100 bg-white p-3 sm:p-4"
           onSubmit={sendMessage}
         >
           <TextArea
@@ -261,12 +262,9 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
             onChange={onInputChange}
             style={{ resize: "none" }}
           />
-          <Button
-            className="h-full flex items-center gap-2 text-blue-500"
-            type="submit"
-          >
+          <Button className="flex h-full items-center gap-2" type="submit">
             Send
-            <Send className="fill-blue-500" />
+            <Send className="fill-white" />
           </Button>
         </form>
       </>

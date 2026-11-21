@@ -16,7 +16,7 @@ export default function ChatBubble({
   return (
     <div
       id={id}
-      className={`px-6 py-4 rounded-2xl drop-shadow-md w-fit animate-pop-from-bottom opacity-0 transition-all ${isSender ? "ml-auto bg-blue-500 text-white" : "bg-gray-300"} ${className}`}
+      className={`w-fit max-w-[85%] rounded-2xl px-4 py-3 animate-pop-from-bottom opacity-0 transition-all duration-300 ${isSender ? "ml-auto bg-blue-600 text-white" : "border border-slate-200 bg-white text-slate-800"} ${className}`}
       ref={ref}
     >
       {children}

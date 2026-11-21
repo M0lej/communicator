@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { Form } from "react-router-dom";
-import type { Intent } from "../api/users";
+import type { UsersIntent } from "../api/users";
 
 type FormButtonIntentParam = {
   name: "intent";
-  value: Intent;
+  value: UsersIntent;
 };
 
 type FormButtonParam = {
@@ -32,9 +32,9 @@ export function UserContainer({
   formButtons,
 }: IUserContainer) {
   return (
-    <div className="bg-blue-300 rounded-lg px-8 py-4 flex justify-between">
-      {username}
-      <div className="flex gap-4">
+    <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-colors hover:border-blue-200 sm:px-6">
+      <span className="min-w-0 truncate font-medium">{username}</span>
+      <div className="flex shrink-0 items-center gap-2 text-blue-700 sm:gap-4">
         {buttons}
         {formButtons?.map((formButton, i) => {
           const intent = formButton.params.find(
@@ -56,7 +56,10 @@ export function UserContainer({
                   key={`input_${intent}_${param.name}`}
                 />
               ))}
-              <button type="submit" className="cursor-pointer">
+              <button
+                type="submit"
+                className="cursor-pointer rounded-lg p-2 transition hover:bg-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
+              >
                 {formButton.icon}
               </button>
             </Form>

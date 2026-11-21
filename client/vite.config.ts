@@ -13,6 +13,7 @@ export default defineConfig({
       "/api/chats": "http://localhost:8080",
       "/api/chat": "http://localhost:8080",
       "/api/messages": "http://localhost:8080",
+      "/api/avatar": "http://localhost:8080",
       "/api/ws": {
         target: "http://localhost:8080",
         ws: true,

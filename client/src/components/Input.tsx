@@ -15,7 +15,7 @@ export default function Input({ children, className, ...inputProps }: IInput) {
 
   return (
     <div
-      className={`flex items-center border-1 border-gray-400 rounded-lg py-2 px-4 gap-3 ${className}`}
+      className={`flex items-center border-2 border-blue-300 rounded-xl py-2 px-4 gap-3 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all duration-200 ${className}`}
     >
       <input
         {...inputProps}
@@ -26,7 +26,7 @@ export default function Input({ children, className, ...inputProps }: IInput) {
               : "password"
             : inputProps.type
         }
-        className="w-full"
+        className="w-full outline-none bg-transparent text-gray-800 placeholder-gray-400"
       >
         {children}
       </input>
@@ -34,13 +34,13 @@ export default function Input({ children, className, ...inputProps }: IInput) {
         <div className="w-fit">
           {passwordVisible && (
             <EyeClosed
-              className="fill-gray-400 cursor-pointer"
+              className="fill-blue-400 cursor-pointer hover:fill-blue-600 transition-colors"
               onClick={togglePasswordVisibility}
             />
           )}
           {!passwordVisible && (
             <Eye
-              className="fill-gray-400 cursor-pointer"
+              className="fill-blue-400 cursor-pointer hover:fill-blue-600 transition-colors"
               onClick={togglePasswordVisibility}
             />
           )}
