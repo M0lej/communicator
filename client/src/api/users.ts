@@ -1,4 +1,4 @@
-import axios from "axios";
+import { api } from "./client";
 import type { IUser } from "../providers/UserProvider";
 import { comparePassword } from "./auth";
 
@@ -72,7 +72,7 @@ async function findUsers(userName: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: `/api/users/find/${encodeURIComponent(String(userName))}`,
     });
@@ -90,7 +90,7 @@ async function sendFriendRequest(userId: string, otherId: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/users/${userId}/friends/add/${otherId}`,
     });
@@ -108,7 +108,7 @@ async function acceptFriendRequest(userId: string, otherId: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/users/${userId}/friends/accept/${otherId}`,
     });
@@ -126,7 +126,7 @@ async function denyFriendRequest(userId: string, otherId: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/users/${userId}/friends/deny/${otherId}`,
     });
@@ -144,7 +144,7 @@ async function removeFriend(userId: string, otherId: string) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "DELETE",
       url: `/api/users/${userId}/friends/remove/${otherId}`,
     });
@@ -158,7 +158,7 @@ async function removeFriend(userId: string, otherId: string) {
 
 export async function getFriends() {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: "/api/users/me/friends",
     });
@@ -172,7 +172,7 @@ export async function getFriends() {
 
 export async function getSentFriendRequests() {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: "/api/users/me/friends/requests/sent",
     });
@@ -186,7 +186,7 @@ export async function getSentFriendRequests() {
 
 export async function getPendingFriendRequests() {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: "/api/users/me/friends/requests/pending",
     });
@@ -257,7 +257,7 @@ export async function getUsersByIds(ids: string[]) {
   try {
     if (!ids) return null;
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/users/ids`,
       data: {
@@ -284,7 +284,7 @@ async function updateOther(userId: string, username?: string, avatar?: File) {
   if (username) formData.append("username", username);
   if (avatar) formData.append("avatar", avatar);
 
-  const response = await axios.patch(
+  const response = await api.patch(
     `/api/users/${encodeURIComponent(userId)}`,
     formData,
   );
@@ -313,7 +313,7 @@ async function updatePassword(
     return { message: "Incorrect old password." };
   }
 
-  const response = await axios({
+  const response = await api({
     method: "PATCH",
     url: `/api/users/${encodeURIComponent(userId as string)}/password`,
     data: {

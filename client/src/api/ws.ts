@@ -1,5 +1,6 @@
 import type { IUser } from "../providers/UserProvider";
 import type { IMessage } from "./messages";
+import { API_BASE_URL } from "./client";
 
 export interface IWSIncomingMessage {
   type: "MESSAGE";
@@ -31,10 +32,12 @@ export class WSService {
   public onError: ((event: Event) => void) | null = null;
 
   constructor(userId: string) {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    this._ws = new WebSocket(
-      `${protocol}//${window.location.host}/api/ws/${encodeURIComponent(userId)}`,
+    const url = new URL(
+      `/api/ws/${encodeURIComponent(userId)}`,
+      API_BASE_URL || window.location.origin,
     );
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    this._ws = new WebSocket(url);
 
     this._ws.onopen = () => console.info("WebSocket connected");
     this._ws.onerror = (event: Event) => {

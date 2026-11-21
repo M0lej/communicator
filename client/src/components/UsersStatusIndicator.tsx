@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes } from "react";
 import type { IUserWithStatus } from "../api/users";
+import { apiUrl } from "../api/client";
 
 interface IProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   user: IUserWithStatus;
@@ -14,7 +15,7 @@ export default function UsersStatusIndicator({ user, ...props }: IProps) {
       <div className="relative">
         <img
           className="h-10 aspect-square rounded-full bg-blue-100 ring-1 ring-slate-200"
-          src={`/api/avatar/${encodeURIComponent(user._id)}`}
+          src={apiUrl(`/api/avatar/${encodeURIComponent(user._id)}`)}
           alt=""
         />
         {user.status && (

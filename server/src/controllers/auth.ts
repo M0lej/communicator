@@ -9,6 +9,15 @@ import { hashPassword, hashSessionToken, random } from "../lib/encryption";
 import { get } from "lodash";
 import { deleteAvatarFile } from "../lib/avatar";
 
+const isProduction = process.env.NODE_ENV === "production";
+const sessionCookieOptions = {
+  httpOnly: true,
+  sameSite: isProduction ? ("none" as const) : ("lax" as const),
+  secure: isProduction,
+  path: "/",
+  maxAge: 5 * 24 * 60 * 60 * 100,
+};
+
 export const register = async (req: express.Request, res: express.Response) => {
   let uploadedAvatarFileId: string | undefined;
   try {
@@ -96,13 +105,7 @@ export const login = async (req: express.Request, res: express.Response) => {
       "authentication.sessionToken": hashedSessionToken,
     });
 
-    res.cookie("USER_AUTH", sessionToken, {
-      httpOnly: true,
-      domain: "localhost",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 5 * 24 * 60 * 60 * 100,
-    });
+    res.cookie("USER_AUTH", sessionToken, sessionCookieOptions);
 
     const userRes = user.toObject();
     delete userRes.authentication;
@@ -195,13 +198,7 @@ export const restoreSession = async (
       "authentication.sessionToken": newHashedSessionToken,
     });
 
-    res.cookie("USER_AUTH", newSessionToken, {
-      httpOnly: true,
-      domain: "localhost",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 5 * 24 * 60 * 60 * 100,
-    });
+    res.cookie("USER_AUTH", newSessionToken, sessionCookieOptions);
 
     const userRes = user.toObject();
 

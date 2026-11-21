@@ -1,4 +1,4 @@
-import axios from "axios";
+import { api } from "./client";
 import type { IMessage } from "./messages";
 
 export interface IChat {
@@ -18,7 +18,7 @@ export async function getOlderMessages(
   startIndex: number,
 ) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: `/api/messages/${userId}/${chatId}/${startIndex}`,
     });
@@ -32,7 +32,7 @@ export async function getOlderMessages(
 
 export async function getChats(userId: string) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: `/api/chats/${encodeURIComponent(userId)}`,
     });
@@ -46,7 +46,7 @@ export async function getChats(userId: string) {
 
 export async function getChat(userId: string, chatId: string) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: `/api/chat/id/${encodeURIComponent(userId)}/${encodeURIComponent(chatId)}`,
     });
@@ -60,7 +60,7 @@ export async function getChat(userId: string, chatId: string) {
 
 export async function getChatByOtherId(otherId: string) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "GET",
       url: `/api/chat/me/${encodeURIComponent(otherId)}`,
     });
@@ -74,7 +74,7 @@ export async function getChatByOtherId(otherId: string) {
 
 export async function createChat(userId: string, otherId: string) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: `/api/chat/create/${encodeURIComponent(userId)}/${encodeURIComponent(otherId)}`,
     });

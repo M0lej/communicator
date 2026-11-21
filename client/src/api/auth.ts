@@ -1,4 +1,5 @@
 import axios from "axios";
+import { api } from "./client";
 
 export async function login({ request }: { request: Request }) {
   try {
@@ -10,7 +11,7 @@ export async function login({ request }: { request: Request }) {
       return;
     }
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: "/api/auth/login",
       data: {
@@ -64,7 +65,7 @@ export async function register({ request }: { request: Request }) {
       };
     }
 
-    const response = await axios({
+    const response = await api({
       method: "POST",
       url: "/api/auth/register",
       data: {
@@ -86,7 +87,7 @@ export async function logout(): Promise<void> {
 
 export async function getUserData() {
   try {
-    const response = await axios({
+    const response = await api({
       method: "get",
       url: "/api/auth/me",
     });
@@ -100,7 +101,7 @@ export async function getUserData() {
 
 export async function comparePassword(userId: string, password: string) {
   try {
-    const response = await axios({
+    const response = await api({
       method: "post",
       url: `/api/auth/${encodeURIComponent(userId)}/compare`,
       data: {

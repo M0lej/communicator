@@ -10,17 +10,21 @@ import cors from "cors";
 const app = express();
 const server = http.createServer(app);
 const ws = expressWs(app, server);
-const port = 8080;
+const port = Number(process.env.PORT) || 8080;
 const corsOptions = {
-  origin: ["http://localhost:5173"],
+  origin: [
+    "http://localhost:5173",
+    process.env.CLIENT_ORIGIN,
+  ].filter((origin): origin is string => Boolean(origin)),
+  credentials: true,
 };
 
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use("/api", router(ws));
-app.use(cors(corsOptions));
 
 async function startServer() {
   await connectToDatabase();
