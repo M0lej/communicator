@@ -1,6 +1,6 @@
 [build]
   base = "."
-  command = "npm --prefix client ci && npm --prefix server ci && npm --prefix server run build && npm --prefix client run build"
+  command = "npm ci && npm run build --workspace=server && npm run build --workspace=client"  
   publish = "client/dist"
 
 [server]
@@ -30,5 +30,5 @@
   status = 200
 
 [dev]
-  command = "npm --prefix server run build && npm --prefix client run dev -- --host 0.0.0.0"
+  command = "npm run build --workspace=server && npm run dev --workspace=client -- --host 0.0.0.0"
   targetPort = 5173
