@@ -1,12 +1,14 @@
 {
+<<<<<<< HEAD
   "private": true,
   "type": "module",
   "workspaces": [
     "client",
     "server"
   ],
+=======
+>>>>>>> parent of ac290d3 (Setup project for backend server to be on netlify instead of render)
   "dependencies": {
-    "@netlify/server": "^0.1.6",
     "netlify-cli": "^27.20.1"
   }
 }
