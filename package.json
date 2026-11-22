@@ -1,5 +1,7 @@
 {
+  "type": "module",
   "dependencies": {
+    "@netlify/server": "^0.1.6",
     "netlify-cli": "^27.20.1"
   }
 }

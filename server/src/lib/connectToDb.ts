@@ -6,7 +6,9 @@ export let avatarBucket: mongoose.mongo.GridFSBucket | null;
 
 export default async function connectToDatabase() {
   try {
-    await mongoose.connect(MONGODB_URI as string);
+    await mongoose.connect(MONGODB_URI as string, {
+      maxIdleTimeMS: 30_000,
+    });
 
     const conn = mongoose.connection;
 
@@ -18,6 +20,6 @@ export default async function connectToDatabase() {
     }
   } catch (error) {
     console.error(error);
-    throw Error;
+    throw error;
   }
 }

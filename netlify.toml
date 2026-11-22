@@ -1,18 +1,34 @@
 [build]
-  base = "client"
-  command = "npm run build"
-  publish = "dist"
+  base = "."
+  command = "npm --prefix client ci && npm --prefix server ci && npm --prefix server run build && npm --prefix client run build"
+  publish = "client/dist"
+
+[server]
+  region = "fra"
+
+[server.scale]
+  max = 1
 
 [[redirects]]
-  from = "/*"
+  from = "/login"
   to = "/index.html"
   status = 200
 
-  ## (optional) Settings for Netlify Dev
-  ## https://github.com/netlify/cli/blob/main/docs/netlify-dev.md#project-detection
-  #[dev]
-  #  command = "yarn start" # Command to start your dev server
-  #  port = 3000 # Port that the dev server will be listening on
-  #  publish = "dist" # Folder with the static content for _redirect file
+[[redirects]]
+  from = "/register"
+  to = "/index.html"
+  status = 200
 
-  ## more info on configuring this file: https://ntl.fyi/file-based-build-config
+[[redirects]]
+  from = "/friends"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/account"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "npm --prefix server run build && npm --prefix client run dev -- --host 0.0.0.0"
+  targetPort = 5173

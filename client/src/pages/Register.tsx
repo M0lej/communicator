@@ -1,4 +1,9 @@
-import { Form, useActionData, useNavigate, useLocation } from "react-router-dom";
+import {
+  Form,
+  useActionData,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import Input from "../components/Input";
 import Label from "../components/Label";
 import Button from "../components/Button";
@@ -41,7 +46,9 @@ export default function Register() {
       method="post"
       ref={formRef}
     >
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create your account</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        Create your account
+      </h1>
       <Label htmlFor="email" className="w-70">
         Email
         <br />
@@ -50,6 +57,18 @@ export default function Register() {
           name="email"
           id="email"
           placeholder="example@domain.com"
+          required
+        />
+      </Label>
+      <Label htmlFor="username" className="w-70">
+        Username
+        <br />
+        <Input
+          type="text"
+          name="username"
+          id="username"
+          minLength={3}
+          maxLength={20}
           required
         />
       </Label>
