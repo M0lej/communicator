@@ -31,7 +31,7 @@ interface IWSActive {
   };
 }
 
-export const activeUsers = new Map<string, WebSocket>();
+export const activeUsers = new Map<string, WebSocket[]>();
 
 export const WSHandler = async (ws: WebSocket, req: express.Request) => {
   try {
@@ -39,59 +39,69 @@ export const WSHandler = async (ws: WebSocket, req: express.Request) => {
 
     if (!userId) {
       ws.close(1003);
+      return;
     }
 
-    if (!activeUsers.get(userId as string)) {
-      activeUsers.set(userId as string, ws);
-      await broadcastStatusChange(userId as string, true);
-    }
+    const connections = activeUsers.get(userId as string) ?? [];
+    activeUsers.set(userId as string, [...connections, ws]);
+    await broadcastStatusChange(userId as string, true);
 
     ws.on("close", async () => {
-      await broadcastStatusChange(userId as string, false);
-      activeUsers.delete(userId as string);
-    });
+      const connections = activeUsers.get(userId as string) ?? [];
+      const remainingConnections = connections.filter(
+        (connection) => connection !== ws,
+      );
 
-    ws.on("message", async (data: string) => {
-      if (!data) {
-        ws.close(1003);
+      if (remainingConnections.length > 0) {
+        activeUsers.set(userId as string, remainingConnections);
         return;
       }
 
-      const parsedData: IWSMessage | IWSUserTyping | IWSActive =
-        JSON.parse(data);
-      const receiver = activeUsers.get(parsedData.content.receiver);
+      activeUsers.delete(userId as string);
+      await broadcastStatusChange(userId as string, false);
+    });
 
-      switch (parsedData.type) {
-        case "MESSAGE":
-          const newMessage = await createNewMessage({
-            sender: userId,
-            receiver: parsedData.content.receiver,
-            chatId: parsedData.content.chatId,
-            content: parsedData.content.content,
-          });
+    ws.on("message", async (data: string) => {
+      try {
+        if (!data) {
+          ws.close(1003);
+          return;
+        }
 
-          ws.send(
-            JSON.stringify({
+        const parsedData: IWSMessage | IWSUserTyping | IWSActive =
+          JSON.parse(data);
+
+        switch (parsedData.type) {
+          case "MESSAGE": {
+            const { chatId, receiver, content } = parsedData.content;
+            const newMessage = await createNewMessage({
+              sender: userId,
+              receiver,
+              chatId,
+              content,
+            });
+
+            const payload = JSON.stringify({
               type: "MESSAGE",
               message: newMessage,
-            }),
-          );
+            });
 
-          if (receiver) {
-            receiver.send(
-              JSON.stringify({
-                type: "MESSAGE",
-                message: newMessage,
-              }),
-            );
+            sendToConnections(activeUsers.get(receiver) ?? [], payload);
+            sendToConnections([ws], payload);
+            break;
           }
-          break;
-        case "ACTIVE":
-        case "TYPING":
-          if (receiver) {
-            receiver.send(data);
+
+          case "ACTIVE":
+          case "TYPING": {
+            const receiverConnections =
+              activeUsers.get(parsedData.content.receiver) ?? [];
+
+            sendToConnections(receiverConnections, data);
+            break;
           }
-          break;
+        }
+      } catch (error) {
+        console.error("Failed to process WebSocket message.", error);
       }
     });
   } catch (error) {
@@ -114,22 +124,30 @@ async function broadcastStatusChange(
       return;
     }
 
-    activeUsers.entries().forEach(([otherId, otherWs]) => {
+    activeUsers.entries().forEach(([otherId, otherWss]) => {
       if (user.friends.includes(new mongoose.Types.ObjectId(otherId))) {
-        otherWs.send(
-          JSON.stringify({
-            type: "ACTIVE",
-            content: {
-              receiver: otherId,
-              sender: user,
-              content: status,
-            },
-          }),
-        );
+        otherWss.forEach((otherWs) => {
+          otherWs.send(
+            JSON.stringify({
+              type: "ACTIVE",
+              content: {
+                receiver: otherId,
+                sender: user,
+                content: status,
+              },
+            }),
+          );
+        });
       }
     });
   } catch (error) {
     console.error(error);
     return;
   }
+}
+
+function sendToConnections(connections: WebSocket[], data: string) {
+  connections.forEach((connection) => {
+    connection.send(data);
+  });
 }

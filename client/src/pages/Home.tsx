@@ -253,7 +253,7 @@ export default function Home() {
       </section>
       {selectedChat && (
         <section
-          className={`absolute inset-y-0 right-0 flex h-full min-h-0 w-1/2 origin-right flex-col border-l border-slate-200 bg-white shadow-lg max-sm:w-full ${isChatFullscreen && "w-full"} transition-all`}
+          className={`absolute inset-y-0 right-0 flex h-full min-h-0 w-1/2 origin-right flex-col border-l border-slate-200 bg-white shadow-lg max-sm:w-full ${isChatFullscreen ? "w-full" : ""} ${!isResizingChat ? "transition-[width]" : "transition-none"} duration-300 ease-in-out`}
           style={
             chatWidth && !isChatFullscreen
               ? { width: `${chatWidth}px` }
