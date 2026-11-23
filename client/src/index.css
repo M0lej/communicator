@@ -78,6 +78,14 @@ body {
   .popup {
     animation-duration: 1ms;
   }
+
+  .loading-balls span {
+    animation: none;
+  }
+  
+  .skeleton-shimmer {
+    animation: none;
+  }
 }
 
 input {
@@ -102,6 +110,49 @@ input {
 
 .typing-indicator span:nth-child(3) {
   animation-delay: 0.3s;
+}
+
+.loading-balls {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.loading-balls span {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 9999px;
+  background-color: #2563eb;
+  animation: loading-bounce 0.7s ease-in-out infinite alternate;
+}
+
+.loading-balls span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading-balls span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(100deg, #e2e8f0 20%, #f8fafc 40%, #e2e8f0 60%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+@keyframes loading-bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-0.9rem);
+  }
 }
 
 @keyframes typing-dot {

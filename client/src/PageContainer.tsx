@@ -7,6 +7,7 @@ import { useWSContext } from "./providers/WSProvider";
 import { WSService } from "./api/ws";
 import { useNavigate } from "react-router-dom";
 import Popup from "./components/Popup";
+import Loading from "./components/Loading";
 
 export default function PageContainer({ page }: { page?: ReactNode }) {
   const [expanded, setExpanded] = useState<boolean>(false);
@@ -37,7 +38,6 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
 
   async function getUser() {
     const res = await getUserData();
-
     if (!res) {
       navigate("/login");
       return;
@@ -204,6 +204,7 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           </p>
         )}
       </section>
+      {!userLoaded && <Loading />}
       {page}
     </div>
   );
