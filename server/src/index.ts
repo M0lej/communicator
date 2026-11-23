@@ -15,7 +15,7 @@ const configuredClientOrigin = process.env.CLIENT_ORIGIN?.replace(/\/+$/, "");
 const corsOptions = {
   origin: [
     "http://localhost:5173",
-    "https://molejcommunicator.netlify.app",
+    "https://molej-communicator.vercel.app",
     configuredClientOrigin,
   ].filter((origin): origin is string => Boolean(origin)),
   credentials: true,
