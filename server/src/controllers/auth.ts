@@ -10,6 +10,7 @@ import { get } from "lodash";
 import { deleteAvatarFile } from "../lib/avatar";
 
 const isProduction = process.env.NODE_ENV === "production";
+const usernamePattern = /^[A-Za-z0-9_]{3,20}$/;
 const sessionCookieOptions = {
   httpOnly: true,
   sameSite: isProduction ? ("none" as const) : ("lax" as const),
@@ -24,7 +25,12 @@ export const register = async (req: express.Request, res: express.Response) => {
     const { username, email, password, avatarFileId } = req.body ?? {};
     uploadedAvatarFileId = avatarFileId;
 
-    if (!username || !email || !password) {
+    if (
+      typeof username !== "string" ||
+      !usernamePattern.test(username) ||
+      !email ||
+      !password
+    ) {
       await cleanupUploadedAvatar(uploadedAvatarFileId);
       uploadedAvatarFileId = undefined;
       return res.sendStatus(400);

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { api } from "./client";
+import { isValidUsername } from "../utilities/username";
 
 export async function login({ request }: { request: Request }) {
   try {
@@ -51,9 +52,14 @@ export async function register({ request }: { request: Request }) {
   try {
     const data = Object.fromEntries((await request.formData()).entries());
 
-    const { email, password, confirmPassword } = data;
+    const { username, email, password, confirmPassword } = data;
 
-    console.log(data);
+    if (!isValidUsername(username)) {
+      return {
+        message:
+          "Username must be 3-20 characters and contain only letters, numbers, or underscores.",
+      };
+    }
 
     if (!email || !password || !confirmPassword) {
       return;
@@ -69,6 +75,7 @@ export async function register({ request }: { request: Request }) {
       method: "POST",
       url: "/api/auth/register",
       data: {
+        username,
         email,
         password,
       },
