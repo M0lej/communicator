@@ -75,7 +75,7 @@ export default function Account() {
               {user ? (
                 <img
                   className="h-30 aspect-square rounded-full ring-1 ring-slate-200"
-                  src={apiUrl(`/api/avatar/${encodeURIComponent(user._id)}?v=${encodeURIComponent(user.avatarFileId ?? "default")}`)}
+                  src={`/api/avatar/${user?._id}`}
                   alt={`${user.username}'s profile picture`}
                 />
               ) : (

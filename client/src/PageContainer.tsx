@@ -8,12 +8,14 @@ import { WSService } from "./api/ws";
 import { useNavigate } from "react-router-dom";
 import Popup from "./components/Popup";
 import { apiUrl } from "./api/client";
+import Loading from "./components/Loading";
 
 export default function PageContainer({ page }: { page?: ReactNode }) {
   const [expanded, setExpanded] = useState<boolean>(false);
   const navigate = useNavigate();
   const { user, setUser } = useUserContext();
   const [userLoaded, setUserLoaded] = useState(false);
+  const [loading, setLoading] = useState(user === null);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { service, setService } = useWSContext();
@@ -38,6 +40,7 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
 
   async function getUser() {
     const res = await getUserData();
+    setLoading(false);
 
     if (!res) {
       navigate("/login");
@@ -205,6 +208,7 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           </p>
         )}
       </section>
+      {loading && <Loading />}
       {page}
     </div>
   );

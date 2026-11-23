@@ -41,7 +41,9 @@ export default function Login() {
       action="/login"
       method="post"
     >
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Welcome back</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        Welcome back
+      </h1>
       <Label htmlFor="email" className="w-70">
         Email
         <br />
