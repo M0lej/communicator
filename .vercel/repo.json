@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_VCd2G0iqiWLda6zuPG8BKoiXOj7S",
+      "name": "communicator",
+      "directory": "client",
+      "orgId": "team_fUaeSlLYeDTxBsn83Me7cygy"
+    }
+  ]
+}

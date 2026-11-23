@@ -1,0 +1,13 @@
+{
+  "settings": {
+    "createdAt": 1795436741218,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": "npm i",
+    "buildCommand": "vite build",
+    "outputDirectory": "dist",
+    "rootDirectory": "client",
+    "directoryListing": false,
+    "nodeVersion": "26.x"
+  }
+}

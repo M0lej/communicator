@@ -1,4 +1,9 @@
-import { Form, useActionData, useNavigate, useLocation } from "react-router-dom";
+import {
+  Form,
+  useActionData,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import Input from "../components/Input";
 import Label from "../components/Label";
 import Button from "../components/Button";
@@ -12,6 +17,7 @@ export default function Register() {
   const navigate = useNavigate();
   const location = useLocation();
   const formRef = useRef(null);
+  const [username, setUsername] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,6 +48,24 @@ export default function Register() {
       ref={formRef}
     >
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create your account</h1>
+      <Label htmlFor="username" className="w-70">
+        Username
+        <br />
+        <Input
+          type="text"
+          name="username"
+          id="username"
+          placeholder="example"
+          value={username}
+          onChange={(event) =>
+            setUsername(event.currentTarget.value.replace(/[^A-Za-z0-9_]/g, ""))
+          }
+          minLength={3}
+          maxLength={20}
+          pattern="[A-Za-z0-9_]{3,20}"
+          required
+        />
+      </Label>
       <Label htmlFor="email" className="w-70">
         Email
         <br />
