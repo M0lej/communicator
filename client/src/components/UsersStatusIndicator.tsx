@@ -6,7 +6,7 @@ interface IProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   user: IUserWithStatus;
 }
 
-export default function UsersStatusIndicator({ user, ...props }: IProps) {
+export default function UserStatusIndicator({ user, ...props }: IProps) {
   return (
     <button
       className="flex flex-col w-fit min-w-20 gap-2 items-center relative cursor-pointer hover:scale-105 transition-all duration-200"
