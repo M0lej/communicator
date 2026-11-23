@@ -1,12 +1,4 @@
-import {
-  Suspense,
-  use,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserContext } from "../providers/UserProvider";
 import {
   createChat,
@@ -25,52 +17,10 @@ import Chat, { type IChatMethodsRef } from "./Chat";
 import { clamp } from "../utilities/clamp";
 import { getFriends, type IUserWithStatus } from "../api/users";
 
-import UsersStatusIndicator from "../components/UsersStatusIndicator";
 import { useLocation, useNavigate } from "react-router-dom";
-
-const chatsPromises = new Map<string, Promise<IChat[] | null>>();
-
-function getChatsPromise(userId: string): Promise<IChat[] | null> {
-  let promise = chatsPromises.get(userId);
-
-  if (!promise) {
-    promise = getChats(userId) as Promise<IChat[] | null>;
-    chatsPromises.set(userId, promise);
-  }
-
-  return promise;
-}
-
-function ChatListSuspense({
-  userId,
-  children,
-}: {
-  userId: string;
-  children: ReactNode;
-}) {
-  use(getChatsPromise(userId));
-  return children;
-}
-
-function ChatLinkSkeletonList() {
-  return (
-    <div aria-label="Loading chats" className="space-y-0" role="status">
-      {Array.from({ length: 5 }, (_, index) => (
-        <div
-          aria-hidden="true"
-          className="flex items-center gap-4 border-b border-gray-100 px-6 py-4 sm:px-10"
-          key={index}
-        >
-          <div className="skeleton-shimmer h-10 w-10 shrink-0 rounded-full" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <div className="skeleton-shimmer h-4 w-2/5 rounded" />
-            <div className="skeleton-shimmer h-3 w-3/4 rounded" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+import ChatLinkSkeleton from "../components/ChatLinkSkeleton";
+import UserStatusIndicator from "../components/UsersStatusIndicator";
+import UserStatusIndicatorSkeleton from "../components/UserStatusIndicatorSkeleton";
 
 export default function Home() {
   const [chats, setChats] = useState<IChatWithTypingInfo[]>([]);
@@ -85,6 +35,9 @@ export default function Home() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isChatFullscreen, setIsChatFullscreen] = useState(false);
+
+  const [isChatsLoading, setIsChatsLoading] = useState(true);
+  const [isFriendsLoading, setIsFriendsLoading] = useState(true);
 
   useEffect(() => {
     const state = location.state as { selectedChat?: IChat } | null;
@@ -121,17 +74,27 @@ export default function Home() {
   }, [user]);
 
   async function fetchChats() {
-    if (!user) return;
+    if (!user) {
+      setIsChatsLoading(false);
+      return;
+    }
 
-    const res = await getChatsPromise(user._id);
+    setIsChatsLoading(true);
 
-    if (res) {
-      setChats(res.map((chat) => ({ ...chat, isTyping: false })));
+    try {
+      const res: IChat[] = await getChats(user._id);
+
+      if (res) {
+        setChats(res.map((chat) => ({ ...chat, isTyping: false })));
+      }
+    } finally {
+      setIsChatsLoading(false);
     }
   }
 
   async function fetchFriends() {
     const res: IUserWithStatus[] = await getFriends();
+    setIsFriendsLoading(false);
 
     if (res) {
       setFriends(res);
@@ -268,45 +231,54 @@ export default function Home() {
       className={`relative flex h-full min-h-0 w-full overflow-hidden bg-slate-50 ${isResizingChat ? "select-none" : ""}`}
     >
       <section className="flex min-h-0 w-full flex-col border-r border-slate-200 bg-white pt-16">
-        {friends.filter((friend) => friend.status == true).length > 0 && (
-          <section className="border-b border-slate-200 px-6 py-4 sm:px-10">
+        <section className="border-b border-slate-200 px-6 py-4 sm:px-10">
+          {friends.filter((friend) => friend.status).length > 0 && (
             <h2 className="mb-3 text-lg font-semibold text-slate-900">
               Online friends
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-1">
-              {friends.map((friend) => (
-                <UsersStatusIndicator
-                  user={friend}
-                  key={friend._id}
-                  onClick={() => openChat(friend)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+          )}
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {isFriendsLoading
+              ? Array.from({ length: 4 }, (_, index) => (
+                  <UserStatusIndicatorSkeleton key={index} />
+                ))
+              : user &&
+                friends
+                  .filter((friend) => friend.status)
+                  .map((friend) => (
+                    <UserStatusIndicator
+                      user={friend}
+                      key={friend._id}
+                      onClick={() => openChat(friend)}
+                    />
+                  ))}
+          </div>
+        </section>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <h2 className="px-6 pb-2 pt-4 text-lg font-semibold text-slate-900 sm:px-10">
             Chats
           </h2>
 
-          {user && (
-            <Suspense fallback={<ChatLinkSkeletonList />}>
-              <ChatListSuspense userId={user._id}>
-                {chats.map((chat) => (
-                  <ChatLink
-                    chat={chat}
-                    key={chat._id}
-                    className="w-full rounded-none px-6 sm:px-10"
-                    onClick={() => setSelectedChat(chat)}
-                  />
-                ))}
-                {chats.length === 0 && (
-                  <p className="px-6 py-4 text-sm text-slate-500 sm:px-10">
-                    No conversations yet. Start a chat with a friend.
-                  </p>
-                )}
-              </ChatListSuspense>
-            </Suspense>
+          {isChatsLoading
+            ? Array.from({ length: 5 }, (_, index) => (
+                <ChatLinkSkeleton
+                  key={index}
+                  className="w-full rounded-none px-6 sm:px-10"
+                />
+              ))
+            : user &&
+              chats.map((chat) => (
+                <ChatLink
+                  chat={chat}
+                  key={chat._id}
+                  className="w-full rounded-none px-6 sm:px-10"
+                  onClick={() => setSelectedChat(chat)}
+                />
+              ))}
+          {!isChatsLoading && chats.length === 0 && (
+            <p className="px-6 py-4 text-sm text-slate-500 sm:px-10">
+              No conversations yet. Start a chat with a friend.
+            </p>
           )}
         </div>
       </section>

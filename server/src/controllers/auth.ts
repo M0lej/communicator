@@ -159,7 +159,7 @@ export const isLoggedIn = async (
     const sessionToken = req.cookies["USER_AUTH"];
 
     if (!sessionToken) {
-      return res.sendStatus(400);
+      return res.status(200).json(null).end();
     }
 
     const hashedSessionToken = hashSessionToken(sessionToken);

@@ -41,7 +41,6 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
   async function getUser() {
     const res = await getUserData();
     setLoading(false);
-
     if (!res) {
       navigate("/login");
       return;
@@ -128,7 +127,8 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
           max-sm:w-full
           w-60
           ${!expanded ? "max-w-0 px-0 border-r-0" : "max-sm:max-w-full max-w-60 px-3 border-r"}
-          rounded-r-2xl border-blue-800 bg-blue-900 text-white shadow-lg
+          sm:rounded-r-2xl
+          border-blue-800 bg-blue-900 text-white shadow-lg
           transition-all
           flex
           flex-col
