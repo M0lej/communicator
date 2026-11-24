@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import Popup from "./components/Popup";
 import { apiUrl } from "./api/client";
 import Loading from "./components/Loading";
+import { apiUrl } from "./api/client";
 
 export default function PageContainer({ page }: { page?: ReactNode }) {
   const [expanded, setExpanded] = useState<boolean>(false);

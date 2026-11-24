@@ -37,7 +37,7 @@ export default function ChatLink({
     >
       <img
         className="h-10 aspect-square rounded-full bg-gray-400"
-        src={`/api/avatar/${otherUserId}`}
+        src={apiUrl(`/api/avatar/${encodeURIComponent(otherUserId)}`)}
       />
       <div className="min-w-0 flex flex-col text-left">
         <h2 className="truncate font-semibold text-slate-800">{label}</h2>
