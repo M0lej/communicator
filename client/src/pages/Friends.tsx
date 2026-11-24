@@ -1,141 +1,88 @@
+import { Search } from "@boxicons/react";
+import { Suspense, useEffect, useState } from "react";
 import {
-  Discussion,
-  Search,
-  UserCheck,
-  UserMinus,
-  UserPlus,
-  UserX,
-} from "@boxicons/react";
+  Await,
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigate,
+} from "react-router-dom";
 import Input from "../components/Input";
-import { Form, useActionData, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { useUserContext, type IUser } from "../providers/UserProvider";
 import {
-  getFriends,
-  getPendingFriendRequests,
-  getSentFriendRequests,
-  type UsersResponse,
-} from "../api/users";
-import { UserContainer } from "../components/UserContainer";
+  UserContainer,
+  type UserContainerVariant,
+} from "../components/UserContainer";
+import UserContainerSkeleton from "../components/UserContainerSkeleton";
 import { createChat, getChatByOtherId } from "../api/chats";
+import type { UsersResponse } from "../api/users";
+import { useUserContext, type IUser } from "../providers/UserProvider";
+import type { friendsLoader } from "../loaders/friendsLoader";
+
+function UserContainerSkeletonList({
+  variant,
+}: {
+  variant: UserContainerVariant;
+}) {
+  return (
+    <>
+      {Array.from({ length: 3 }, (_, index) => (
+        <UserContainerSkeleton key={index} variant={variant} />
+      ))}
+    </>
+  );
+}
+
+function UserListError() {
+  return (
+    <p className="py-2 text-sm text-red-700">
+      Unable to load this list. Please try again.
+    </p>
+  );
+}
+
+function asUserList(value: unknown): IUser[] {
+  return Array.isArray(value) ? value : [];
+}
 
 export default function Friends() {
   const { user } = useUserContext();
+  const { friends, sentRequests, pendingRequests } =
+    useLoaderData<typeof friendsLoader>();
+  const response = useActionData() as UsersResponse | undefined;
   const navigate = useNavigate();
-
-  const response: UsersResponse | undefined = useActionData();
-  const [friends, setFriends] = useState<IUser[]>([]);
-  const [sentFriendRequests, setSentFriendRequests] = useState<IUser[]>([]);
-  const [pendingFriendRequests, setPendingFriendRequests] = useState<IUser[]>(
-    [],
-  );
   const [foundUsers, setFoundUsers] = useState<IUser[]>([]);
 
   useEffect(() => {
-    getFriendsArray();
-    getSentFriendRequestsUsersArray();
-    getPendingFriendRequestsUsersArray();
-  }, [user]);
+    if (response?.intent !== "find" || !Array.isArray(response.data)) return;
 
-  async function getFriendsArray() {
-    const friendsArray: IUser[] =
-      ((await getFriends()) as IUser[] | null) ?? [];
+    let isCurrent = true;
 
-    setFriends(friendsArray);
-  }
+    void Promise.all([friends, sentRequests, pendingRequests]).then(
+      ([loadedFriends, loadedSentRequests, loadedPendingRequests]) => {
+        if (!isCurrent) return;
 
-  async function getSentFriendRequestsUsersArray() {
-    const users = ((await getSentFriendRequests()) as IUser[]) ?? [];
+        const existingUserIds = new Set(
+          [
+            ...asUserList(loadedFriends),
+            ...asUserList(loadedSentRequests),
+            ...asUserList(loadedPendingRequests),
+          ].map((existingUser) => existingUser._id),
+        );
 
-    setSentFriendRequests(users);
-  }
-
-  async function getPendingFriendRequestsUsersArray() {
-    const users: IUser[] =
-      ((await getPendingFriendRequests()) as IUser[] | null) ?? [];
-
-    setPendingFriendRequests(users);
-  }
-
-  useEffect(() => {
-    handleResponse();
-  }, [response]);
-
-  function handleResponse() {
-    if (!response) return;
-
-    switch (response["intent"]) {
-      case "find":
-        updateFoundUsersState();
-        break;
-      case "add":
-        updateSentFriendRequestsState();
-        break;
-      case "remove":
-        updateFriendsState();
-        break;
-      case "pending_accept":
-        updatePendingFriendRequestsState(true);
-        break;
-      case "pending_deny":
-        updatePendingFriendRequestsState(false);
-        break;
-      default:
-        return;
-    }
-  }
-
-  function updateFoundUsersState() {
-    if (!response?.data) return;
-
-    const filteredUsers = (response!.data as IUser[]).filter(
-      (foundUser) =>
-        foundUser._id != user?._id &&
-        !friends.find((friend) => friend._id === foundUser._id) &&
-        !sentFriendRequests.find(
-          (requestUser) => requestUser._id === foundUser._id,
-        ) &&
-        !pendingFriendRequests.find(
-          (requestUser) => requestUser._id === foundUser._id,
-        ),
+        setFoundUsers(
+          response.data.filter(
+            (foundUser) =>
+              foundUser._id !== user?._id &&
+              !existingUserIds.has(foundUser._id),
+          ),
+        );
+      },
     );
 
-    setFoundUsers(filteredUsers);
-  }
-
-  function updateFriendsState() {
-    if (!response!.data) return;
-
-    setFriends((friends) =>
-      friends.filter((friend) => friend._id != (response?.data as IUser)._id),
-    );
-  }
-
-  function updateSentFriendRequestsState() {
-    if (!response!.data) return;
-
-    setSentFriendRequests((sentFriendRequests) => [
-      ...sentFriendRequests,
-      response!.data as IUser,
-    ]);
-    setFoundUsers([]);
-  }
-
-  function updatePendingFriendRequestsState(requestAccepted: boolean) {
-    if (!response!.data) return;
-
-    setPendingFriendRequests((pendingFriendRequests) =>
-      pendingFriendRequests.filter(
-        (pendingUser) => pendingUser._id != (response!.data as IUser)._id,
-      ),
-    );
-
-    if (requestAccepted) {
-      setFriends((friends) => [...friends, response!.data as IUser]);
-    }
-
-    setFoundUsers([]);
-  }
+    return () => {
+      isCurrent = false;
+    };
+  }, [friends, pendingRequests, response, sentRequests, user?._id]);
 
   async function openChat(friendUserId: string) {
     if (!user) return;
@@ -168,135 +115,108 @@ export default function Friends() {
           className="flex h-10 aspect-square items-center justify-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           type="submit"
         >
-          <Search className="" />
+          <Search />
         </button>
       </Form>
       <div className="mx-auto flex max-w-3xl flex-col gap-3 p-4 sm:p-8">
-        {foundUsers.length > 0 && (
-          <h1 className="mt-2 text-lg font-bold text-blue-950">Found users</h1>
+        {response?.intent === "find" &&
+          Array.isArray(response.data) &&
+          foundUsers.length > 0 && (
+          <>
+            <h1 className="mt-2 text-lg font-bold text-blue-950">
+              Found users
+            </h1>
+            {foundUsers.map((foundUser) => (
+              <UserContainer
+                user={foundUser}
+                variant="found"
+                key={`find_${foundUser._id}`}
+              />
+            ))}
+          </>
         )}
-        {foundUsers.length > 0 &&
-          foundUsers.map((foundUser) => (
-            <UserContainer
-              username={foundUser.username}
-              formButtons={[
-                {
-                  icon: <UserPlus />,
-                  params: [
-                    {
-                      name: "intent",
-                      value: "add",
-                    },
-                    {
-                      name: "userId",
-                      value: user?._id ?? "",
-                    },
-                    {
-                      name: "otherId",
-                      value: foundUser._id,
-                    },
-                  ],
-                },
-              ]}
-              key={`find_${foundUser._id}`}
-            />
-          ))}
-        {pendingFriendRequests.length > 0 && (
-          <h1 className="mt-4 text-lg font-bold text-blue-950">
-            Pending friend requests
-          </h1>
-        )}
-        {pendingFriendRequests.length > 0 &&
-          pendingFriendRequests.map((friendRequestUser) => (
-            <UserContainer
-              username={friendRequestUser.username}
-              formButtons={[
-                {
-                  icon: <UserCheck />,
-                  params: [
-                    {
-                      name: "intent",
-                      value: "pending_accept",
-                    },
-                    {
-                      name: "userId",
-                      value: user?._id ?? "",
-                    },
-                    {
-                      name: "otherId",
-                      value: friendRequestUser._id,
-                    },
-                  ],
-                },
-                {
-                  icon: <UserX />,
-                  params: [
-                    {
-                      name: "intent",
-                      value: "pending_deny",
-                    },
-                    {
-                      name: "userId",
-                      value: user?._id ?? "",
-                    },
-                    {
-                      name: "otherId",
-                      value: friendRequestUser._id,
-                    },
-                  ],
-                },
-              ]}
-              key={`pending_${friendRequestUser._id}`}
-            />
-          ))}
-        {sentFriendRequests.length > 0 && (
-          <h1 className="mt-4 text-lg font-bold text-blue-950">
-            Sent friend requests
-          </h1>
-        )}
-        {sentFriendRequests.length > 0 &&
-          sentFriendRequests.map((friendRequestUser) => (
-            <UserContainer
-              username={friendRequestUser.username}
-              key={`sent_${friendRequestUser._id}`}
-            />
-          ))}
+
+        <Suspense
+          fallback={
+            <>
+              <h1 className="mt-4 text-lg font-bold text-blue-950">
+                Pending friend requests
+              </h1>
+              <UserContainerSkeletonList variant="pending" />
+            </>
+          }
+        >
+          <Await resolve={pendingRequests} errorElement={<UserListError />}>
+            {(loadedRequests: IUser[] | null) => {
+              const requests = loadedRequests ?? [];
+              if (requests.length === 0) return null;
+
+              return (
+                <>
+                  <h1 className="mt-4 text-lg font-bold text-blue-950">
+                    Pending friend requests
+                  </h1>
+                  {requests.map((friendRequestUser) => (
+                    <UserContainer
+                      user={friendRequestUser}
+                      variant="pending"
+                      key={`pending_${friendRequestUser._id}`}
+                    />
+                  ))}
+                </>
+              );
+            }}
+          </Await>
+        </Suspense>
+
+        <Suspense
+          fallback={
+            <>
+              <h1 className="mt-4 text-lg font-bold text-blue-950">
+                Sent friend requests
+              </h1>
+              <UserContainerSkeletonList variant="sent" />
+            </>
+          }
+        >
+          <Await resolve={sentRequests} errorElement={<UserListError />}>
+            {(loadedRequests: IUser[] | null) => {
+              const requests = loadedRequests ?? [];
+              if (requests.length === 0) return null;
+
+              return (
+                <>
+                  <h1 className="mt-4 text-lg font-bold text-blue-950">
+                    Sent friend requests
+                  </h1>
+                  {requests.map((friendRequestUser) => (
+                    <UserContainer
+                      user={friendRequestUser}
+                      variant="sent"
+                      key={`sent_${friendRequestUser._id}`}
+                    />
+                  ))}
+                </>
+              );
+            }}
+          </Await>
+        </Suspense>
+
         <h1 className="mt-4 text-lg font-bold text-blue-950">Your friends</h1>
-        {friends.length > 0 &&
-          friends.map((friendUser) => (
-            <UserContainer
-              username={friendUser.username}
-              buttons={
-                <button
-                  className="cursor-pointer rounded-lg p-2 text-blue-700 transition hover:bg-blue-100 hover:text-blue-900"
-                  onClick={() => openChat(friendUser._id)}
-                  aria-label={`Start chat with ${friendUser.username}`}
-                >
-                  <Discussion />
-                </button>
-              }
-              formButtons={[
-                {
-                  icon: <UserMinus />,
-                  params: [
-                    {
-                      name: "intent",
-                      value: "remove",
-                    },
-                    {
-                      name: "userId",
-                      value: user?._id ?? "",
-                    },
-                    {
-                      name: "otherId",
-                      value: friendUser._id,
-                    },
-                  ],
-                },
-              ]}
-              key={`friend_${friendUser._id}`}
-            />
-          ))}
+        <Suspense fallback={<UserContainerSkeletonList variant="friend" />}>
+          <Await resolve={friends} errorElement={<UserListError />}>
+            {(loadedFriends: IUser[] | null) =>
+              (loadedFriends ?? []).map((friendUser) => (
+                <UserContainer
+                  user={friendUser}
+                  variant="friend"
+                  onStartChat={openChat}
+                  key={`friend_${friendUser._id}`}
+                />
+              ))
+            }
+          </Await>
+        </Suspense>
       </div>
     </div>
   );

@@ -1,70 +1,84 @@
+import {
+  Discussion,
+  UserCheck,
+  UserMinus,
+  UserPlus,
+  UserX,
+} from "@boxicons/react";
 import type { ReactNode } from "react";
 import { Form } from "react-router-dom";
 import type { UsersIntent } from "../api/users";
+import { useUserContext, type IUser } from "../providers/UserProvider";
 
-type FormButtonIntentParam = {
-  name: "intent";
-  value: UsersIntent;
-};
+export type UserContainerVariant = "found" | "pending" | "sent" | "friend";
 
-type FormButtonParam = {
-  name: string;
-  value: string;
-};
+type UserContainerProps = {
+  user: IUser;
+  action?: string;
+} & (
+  | {
+      variant: "friend";
+      onStartChat: (friendUserId: string) => void;
+    }
+  | {
+      variant: "found" | "pending" | "sent";
+      onStartChat?: never;
+    }
+);
 
-type FormButton = {
+interface FormAction {
+  intent: UsersIntent;
   icon: ReactNode;
-  action?: string;
-  params: [FormButtonIntentParam, ...FormButtonParam[]];
-};
-
-interface IUserContainer {
-  username: string;
-  buttons?: ReactNode;
-  formButtons?: FormButton[];
-  action?: string;
 }
 
-export function UserContainer({
-  action,
-  username,
-  buttons,
-  formButtons,
-}: IUserContainer) {
+const formActions: Record<UserContainerVariant, FormAction[]> = {
+  found: [{ intent: "add", icon: <UserPlus /> }],
+  pending: [
+    { intent: "pending_accept", icon: <UserCheck /> },
+    { intent: "pending_deny", icon: <UserX /> },
+  ],
+  sent: [],
+  friend: [{ intent: "remove", icon: <UserMinus /> }],
+};
+
+export function UserContainer(props: UserContainerProps) {
+  const { user, variant, action = "/friends" } = props;
+  const { user: currentUser } = useUserContext();
+
   return (
     <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-colors hover:border-blue-200 sm:px-6">
-      <span className="min-w-0 truncate font-medium">{username}</span>
+      <div className="flex items-center gap-4">
+        <img
+          src={`/api/avatar/${user._id}`}
+          className="aspect-square h-10 rounded-full"
+          alt=""
+        />
+        <span className="min-w-0 truncate font-medium">{user.username}</span>
+      </div>
       <div className="flex shrink-0 items-center gap-2 text-blue-700 sm:gap-4">
-        {buttons}
-        {formButtons?.map((formButton, i) => {
-          const intent = formButton.params.find(
-            (param) => param.name === "intent",
-          )!.value;
-
-          return (
-            <Form
-              method="post"
-              action={action ?? "/friends"}
-              key={`form_${intent}_${i}`}
+        {variant === "friend" && (
+          <button
+            type="button"
+            className="cursor-pointer rounded-lg p-2 text-blue-700 transition hover:bg-blue-100 hover:text-blue-900"
+            onClick={() => props.onStartChat(user._id)}
+            aria-label={`Start chat with ${user.username}`}
+          >
+            <Discussion />
+          </button>
+        )}
+        {formActions[variant].map(({ intent, icon }) => (
+          <Form method="post" action={action} key={intent}>
+            <input type="hidden" name="intent" value={intent} />
+            <input type="hidden" name="userId" value={currentUser?._id ?? ""} />
+            <input type="hidden" name="otherId" value={user._id} />
+            <button
+              type="submit"
+              className="cursor-pointer rounded-lg p-2 transition hover:bg-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
             >
-              {formButton.params.map((param) => (
-                <input
-                  type="hidden"
-                  hidden
-                  name={param.name}
-                  value={param.value}
-                  key={`input_${intent}_${param.name}`}
-                />
-              ))}
-              <button
-                type="submit"
-                className="cursor-pointer rounded-lg p-2 transition hover:bg-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
-              >
-                {formButton.icon}
-              </button>
-            </Form>
-          );
-        })}
+              {icon}
+            </button>
+          </Form>
+        ))}
       </div>
     </div>
   );
