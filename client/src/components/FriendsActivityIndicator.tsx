@@ -18,18 +18,30 @@ export const FriendsActivityIndicator = forwardRef(
     const { user } = useUserContext();
     const [friends, setFriends] = useState<IUserWithStatus[]>([]);
     const [isFriendsLoading, setIsFriendsLoading] = useState(true);
+    const [hasFriendsError, setHasFriendsError] = useState(false);
 
     useEffect(() => {
+      let isCurrent = true;
+
       async function fetchFriends() {
         const res = await getFriends();
+        if (!isCurrent) return;
+
         setIsFriendsLoading(false);
 
-        if (res) {
-          setFriends(res);
+        if (res === null) {
+          setHasFriendsError(true);
+          return;
         }
+
+        setFriends(res);
       }
 
       void fetchFriends();
+
+      return () => {
+        isCurrent = false;
+      };
     }, [user]);
 
     function refreshFriends(data: IWSIncomingActive) {
@@ -51,9 +63,9 @@ export const FriendsActivityIndicator = forwardRef(
     }
 
     useImperativeHandle(ref, () => ({ refreshFriends }), [refreshFriends]);
-    return friends.length > 0 ? (
+    return isFriendsLoading || hasFriendsError || friends.length > 0 ? (
       <section className="border-b border-slate-200 px-6 py-4 sm:px-10">
-        {friends && (
+        {friends.length > 0 && (
           <h2 className="mb-3 text-lg font-semibold text-slate-900">Friends</h2>
         )}
         <div className="flex gap-4 overflow-x-auto pb-1">
@@ -70,6 +82,11 @@ export const FriendsActivityIndicator = forwardRef(
                 />
               ))}
         </div>
+        {hasFriendsError && (
+          <p className="mt-2 text-sm text-red-700" role="alert">
+            Unable to load friends. Please try again.
+          </p>
+        )}
       </section>
     ) : null;
   },
