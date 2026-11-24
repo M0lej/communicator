@@ -15,21 +15,26 @@ import type {
 } from "../api/ws";
 import Chat, { type IChatMethodsRef } from "./Chat";
 import { clamp } from "../utilities/clamp";
-import { getFriends, type IUserWithStatus } from "../api/users";
+import { type IUserWithStatus } from "../api/users";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import ChatLinkSkeleton from "../components/ChatLinkSkeleton";
-import UserStatusIndicator from "../components/UsersStatusIndicator";
-import UserStatusIndicatorSkeleton from "../components/UserStatusIndicatorSkeleton";
+import {
+  FriendsActivityIndicator,
+  type FriendsActivityIndicatorHandle,
+} from "../components/FriendsActivityIndicator";
 
 export default function Home() {
   const [chats, setChats] = useState<IChatWithTypingInfo[]>([]);
   const [selectedChat, setSelectedChat] = useState<IChat | null>(null);
   const selectedChatMethodsRef = useRef<IChatMethodsRef | null>(null);
+
   const homeContainerRef = useRef<HTMLDivElement | null>(null);
+  const FriendsActivityIndicatorRef =
+    useRef<FriendsActivityIndicatorHandle | null>(null);
+
   const { user } = useUserContext();
   const { service } = useWSContext();
-  const [friends, setFriends] = useState<IUserWithStatus[]>([]);
   const [chatWidth, setChatWidth] = useState<number | null>();
   const [isResizingChat, setIsResizingChat] = useState(false);
   const location = useLocation();
@@ -37,7 +42,6 @@ export default function Home() {
   const [isChatFullscreen, setIsChatFullscreen] = useState(false);
 
   const [isChatsLoading, setIsChatsLoading] = useState(true);
-  const [isFriendsLoading, setIsFriendsLoading] = useState(true);
 
   useEffect(() => {
     const state = location.state as { selectedChat?: IChat } | null;
@@ -69,37 +73,27 @@ export default function Home() {
   }, [service]);
 
   useEffect(() => {
-    fetchChats();
-    fetchFriends();
-  }, [user]);
-
-  async function fetchChats() {
-    if (!user) {
-      setIsChatsLoading(false);
-      return;
-    }
-
-    setIsChatsLoading(true);
-
-    try {
-      const res: IChat[] = await getChats(user._id);
-
-      if (res) {
-        setChats(res.map((chat) => ({ ...chat, isTyping: false })));
+    async function fetchChats() {
+      if (!user) {
+        setIsChatsLoading(false);
+        return;
       }
-    } finally {
-      setIsChatsLoading(false);
-    }
-  }
 
-  async function fetchFriends() {
-    const res: IUserWithStatus[] = await getFriends();
-    setIsFriendsLoading(false);
+      setIsChatsLoading(true);
 
-    if (res) {
-      setFriends(res);
+      try {
+        const res: IChat[] = await getChats(user._id);
+
+        if (res) {
+          setChats(res.map((chat) => ({ ...chat, isTyping: false })));
+        }
+      } finally {
+        setIsChatsLoading(false);
+      }
     }
-  }
+
+    void fetchChats();
+  }, [user]);
 
   const receiveUpdates = useCallback(
     (event: MessageEvent) => {
@@ -120,7 +114,7 @@ export default function Home() {
           selectedChatMethodsRef.current?.receiveNewTypingStatus(data);
           break;
         case "ACTIVE":
-          updateActiveUsers(data);
+          FriendsActivityIndicatorRef.current?.refreshFriends(data);
           break;
       }
     },
@@ -144,24 +138,6 @@ export default function Home() {
           ? { ...chat, isTyping: data.content.content }
           : chat,
       ),
-    );
-  }
-
-  function updateActiveUsers(data: IWSIncomingActive) {
-    const friendUserWithStatus: IUserWithStatus = {
-      ...data.content.sender,
-      status: data.content.content,
-    };
-    setFriends((users) =>
-      users
-        .map((friendUser: IUserWithStatus) => {
-          if (friendUser._id === friendUserWithStatus._id) {
-            return friendUserWithStatus;
-          } else {
-            return friendUser;
-          }
-        })
-        .sort((userA, userB) => Number(userB.status) - Number(userA.status)),
     );
   }
 
@@ -231,29 +207,10 @@ export default function Home() {
       className={`relative flex h-full min-h-0 w-full overflow-hidden bg-slate-50 ${isResizingChat ? "select-none" : ""}`}
     >
       <section className="flex min-h-0 w-full flex-col border-r border-slate-200 bg-white pt-16">
-        <section className="border-b border-slate-200 px-6 py-4 sm:px-10">
-          {friends.filter((friend) => friend.status).length > 0 && (
-            <h2 className="mb-3 text-lg font-semibold text-slate-900">
-              Online friends
-            </h2>
-          )}
-          <div className="flex gap-4 overflow-x-auto pb-1">
-            {isFriendsLoading
-              ? Array.from({ length: 4 }, (_, index) => (
-                  <UserStatusIndicatorSkeleton key={index} />
-                ))
-              : user &&
-                friends
-                  .filter((friend) => friend.status)
-                  .map((friend) => (
-                    <UserStatusIndicator
-                      user={friend}
-                      key={friend._id}
-                      onClick={() => openChat(friend)}
-                    />
-                  ))}
-          </div>
-        </section>
+        <FriendsActivityIndicator
+          ref={FriendsActivityIndicatorRef}
+          onClick={openChat}
+        />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <h2 className="px-6 pb-2 pt-4 text-lg font-semibold text-slate-900 sm:px-10">
             Chats
