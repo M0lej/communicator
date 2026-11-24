@@ -51,7 +51,7 @@ export const FriendsActivityIndicator = forwardRef(
     }
 
     useImperativeHandle(ref, () => ({ refreshFriends }), [refreshFriends]);
-    return (
+    return friends.length > 0 ? (
       <section className="border-b border-slate-200 px-6 py-4 sm:px-10">
         {friends && (
           <h2 className="mb-3 text-lg font-semibold text-slate-900">Friends</h2>
@@ -71,6 +71,6 @@ export const FriendsActivityIndicator = forwardRef(
               ))}
         </div>
       </section>
-    );
+    ) : null;
   },
 );

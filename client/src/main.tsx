@@ -11,6 +11,7 @@ import { updateUser, users } from "./api/users";
 import Account from "./pages/Account";
 import { WSProvider } from "./providers/WSProvider";
 import Register from "./pages/Register";
+import { friendsLoader } from "./loaders/friendsLoader";
 
 const router = createBrowserRouter([
   {
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
   {
     path: "/friends",
     element: <PageContainer page={<Friends />} />,
+    loader: friendsLoader,
     action: users,
   },
   {
