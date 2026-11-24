@@ -47,7 +47,9 @@ export default function Register() {
       method="post"
       ref={formRef}
     >
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create your account</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        Create your account
+      </h1>
       <Label htmlFor="username" className="w-70">
         Username
         <br />

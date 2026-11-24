@@ -84,7 +84,25 @@ export async function register({ request }: { request: Request }) {
     return response.data;
   } catch (error) {
     console.error(error);
-    return null;
+    if (axios.isAxiosError(error)) {
+      const responseData: unknown = error.response?.data;
+      if (
+        typeof responseData === "object" &&
+        responseData !== null &&
+        "message" in responseData &&
+        typeof responseData.message === "string"
+      ) {
+        return responseData;
+      }
+
+      if (!error.response) {
+        return { message: "Unable to connect to the server." };
+      }
+    }
+
+    return {
+      message: "An unexpected error occurred while registering user.",
+    };
   }
 }
 

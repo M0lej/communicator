@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  _getUserByUsername,
   createUser,
   getUserByEmail,
   getUserBySessionToken,
@@ -33,7 +34,7 @@ export const register = async (req: express.Request, res: express.Response) => {
     ) {
       await cleanupUploadedAvatar(uploadedAvatarFileId);
       uploadedAvatarFileId = undefined;
-      return res.sendStatus(400);
+      return res.status(400).json({ message: "Invalid input" }).end();
     }
 
     const foundUser = await getUserByEmail(email);
@@ -41,11 +42,27 @@ export const register = async (req: express.Request, res: express.Response) => {
     if (foundUser) {
       await cleanupUploadedAvatar(uploadedAvatarFileId);
       uploadedAvatarFileId = undefined;
-      return res.sendStatus(400);
+      return res
+        .status(400)
+        .json({ message: "User with provided email already exists" })
+        .end();
+    }
+
+    const userWithSameUsername = await _getUserByUsername(username);
+
+    if (userWithSameUsername) {
+      await cleanupUploadedAvatar(uploadedAvatarFileId);
+      uploadedAvatarFileId = undefined;
+      return res
+        .status(400)
+        .json({ message: "User with provided username already exists" })
+        .end();
     }
 
     const salt = random();
     const encryptedPassword = hashPassword(salt, password);
+    const sessionToken = random();
+    const hashedSessionToken = hashSessionToken(sessionToken);
 
     const user = await createUser({
       username,
@@ -54,10 +71,12 @@ export const register = async (req: express.Request, res: express.Response) => {
       authentication: {
         salt,
         password: encryptedPassword,
+        sessionToken: hashedSessionToken,
       },
     });
     uploadedAvatarFileId = undefined;
 
+    res.cookie("USER_AUTH", sessionToken, sessionCookieOptions);
     delete user.authentication;
 
     return res.status(201).json(user).end();
