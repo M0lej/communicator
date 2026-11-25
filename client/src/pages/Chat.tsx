@@ -15,24 +15,36 @@ import {
 } from "../api/messages";
 import ChatBubble from "../components/ChatBubble";
 import Button from "../components/Button";
-import { Fullscreen, FullscreenExit, Send, X } from "@boxicons/react";
+import {
+  Fullscreen,
+  FullscreenExit,
+  RadioCircleMarked,
+  Send,
+  X,
+} from "@boxicons/react";
 import IconButton from "../components/IconButton";
 import { useWSContext } from "../providers/WSProvider";
-import type { IWSIncomingMessage, IWSIncomingTyping } from "../api/ws";
+import type {
+  IWSIncomingActive,
+  IWSIncomingMessage,
+  IWSIncomingTyping,
+} from "../api/ws";
 import TextArea from "../components/TextArea";
 import TypingIndicator from "../components/TypingIndicator";
 import { clamp } from "../utilities/clamp";
+import type { IUserWithStatus } from "../api/users";
 
-function isAtPageBottom() {
-  const page = document.documentElement;
-  const scrollHeight = Math.max(page.scrollHeight, document.body.scrollHeight);
-
-  return window.scrollY + window.innerHeight >= scrollHeight - 1;
+function isAtBottom(element: HTMLElement | null) {
+  return (
+    element !== null &&
+    element.scrollHeight - element.scrollTop - element.clientHeight <= 1
+  );
 }
 
 export interface IChatMethodsRef {
   receiveNewMessage: (data: IWSIncomingMessage) => void;
   receiveNewTypingStatus: (IWSIncomingMessage: IWSIncomingTyping) => void;
+  receiveNewStatus: (IWSIncomingActive: IWSIncomingActive) => void;
 }
 
 interface IChatProps {
@@ -42,12 +54,13 @@ interface IChatProps {
   hideChat: () => void;
 }
 
+const defaultUsername = "Deleted user";
+
 const Chat = forwardRef<IChatMethodsRef, IChatProps>(
   ({ chat, hideChat, isFullscreen, changeFullscreenState }, ref) => {
     const { user } = useUserContext();
 
-    const [otherUsername, setOtherUsername] = useState<string>("other user");
-    const [otherUserId, setOtherUserId] = useState<string | null>(null);
+    const [otherUser, setOtherUser] = useState<IUserWithStatus | null>(null);
 
     const [messages, setMessages] = useState<IMessage[]>([]);
     const { service: wsService } = useWSContext();
@@ -55,15 +68,26 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
     const chatRef = useRef<HTMLDivElement | null>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
     const firstMessagesRef = useRef<(HTMLDivElement | null)[]>([]);
+    const shouldScrollAfterIncomingMessageRef = useRef<boolean | null>(null);
 
     const [isTyping, setTyping] = useState(false);
     const [messagesStartIndexId, setMsgsStartIndexId] = useState(0);
+    const [isActive, setActive] = useState(false);
     const isTypingRef = useRef(false);
     const shouldScrollAfterTypingChangeRef = useRef(false);
 
     const [textAreaRows, setTextAreaRows] = useState(1);
 
     useEffect(() => {
+      const shouldScrollAfterIncomingMessage =
+        shouldScrollAfterIncomingMessageRef.current;
+      shouldScrollAfterIncomingMessageRef.current = null;
+
+      if (shouldScrollAfterIncomingMessage !== null) {
+        if (shouldScrollAfterIncomingMessage) scrollToBottom();
+        return;
+      }
+
       if (messagesStartIndexId > 0) {
         scrollToPreviousSectionFirstMsg();
       } else {
@@ -105,15 +129,14 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
 
     function setOtherUserInfo() {
       if (!user) return;
-      const otherUserId = Array.isArray(chat.users)
-        ? (chat.users.find((id) => id !== user._id) ?? null)
+      const res: IUserWithStatus | null = Array.isArray(chat.users)
+        ? (chat.users.find((otherUser) => otherUser._id !== user._id) ?? null)
         : null;
-      setOtherUserId(otherUserId);
-      setOtherUsername(
-        (Array.isArray(chat.userNames)
-          ? chat.userNames.find((username) => username !== user.username)
-          : undefined) ?? "other user",
-      );
+
+      if (res) {
+        setOtherUser(res);
+        setActive(res.status);
+      }
     }
 
     useImperativeHandle(
@@ -122,6 +145,8 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
         receiveNewMessage(data) {
           if (!chat || data.message.chatId !== chat._id) return;
 
+          shouldScrollAfterIncomingMessageRef.current =
+            isAtBottom(chatRef.current);
           setMessages((currentMessages) =>
             currentMessages.some((message) => message._id === data.message._id)
               ? currentMessages
@@ -133,8 +158,12 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
           if (isTypingRef.current === data.content.content) return;
 
           isTypingRef.current = data.content.content;
-          shouldScrollAfterTypingChangeRef.current = isAtPageBottom();
+          shouldScrollAfterTypingChangeRef.current = isAtBottom(chatRef.current);
           setTyping(data.content.content);
+        },
+        receiveNewStatus(data) {
+          const status = data.content.content;
+          setActive(status);
         },
       }),
       [chat],
@@ -182,23 +211,23 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
 
       const content = formData.get("content");
 
-      if (!wsService || !chat || !otherUserId || typeof content !== "string") {
+      if (!wsService || !chat || !otherUser || typeof content !== "string") {
         return;
       }
 
-      wsService.sendMessage(chat._id, otherUserId, content);
+      wsService.sendMessage(chat._id, otherUser._id, content);
 
       event.currentTarget.reset();
     };
 
     function onInputFocus() {
-      if (!wsService || !chat || !otherUserId) return;
-      wsService.notifyTyping(chat._id, otherUserId, true);
+      if (!wsService || !chat || !otherUser) return;
+      wsService.notifyTyping(chat._id, otherUser._id, true);
     }
 
     function onInputBlur() {
-      if (!wsService || !chat || !otherUserId) return;
-      wsService.notifyTyping(chat._id, otherUserId, false);
+      if (!wsService || !chat || !otherUser) return;
+      wsService.notifyTyping(chat._id, otherUser._id, false);
     }
 
     function addSectionFirstMessageRef(el: HTMLDivElement | null) {
@@ -227,7 +256,7 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
 
     return (
       <>
-        <div className="relative flex h-16 w-full shrink-0 items-center justify-center border-b border-blue-100 bg-white px-14 text-lg font-semibold text-blue-950 shadow-sm">
+        <div className="relative flex h-12 w-full shrink-0 items-center border-b border-slate-200 bg-white px-4 text-[15px] font-bold text-slate-900">
           <IconButton
             className={
               isFullscreen
@@ -238,7 +267,14 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
             aria-label="Close chat"
             icon={<X />}
           />
-          <h1 className="flex gap-2">{otherUsername}</h1>
+          <h1
+            className={`flex items-center gap-2 ${isFullscreen ? "ml-0" : "sm:ml-13"}`}
+          >
+            <RadioCircleMarked
+              className={`${isActive ? "fill-green-500" : "fill-gray-500"}`}
+            />
+            {otherUser?.username ?? defaultUsername}
+          </h1>
           <div
             className={`absolute right-20 top-1/2 flex -translate-y-1/2 items-center gap-2 ${
               isFullscreen ? "sm:right-20" : "sm:right-5"
@@ -246,7 +282,7 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
           >
             {isTyping && (
               <TypingIndicator
-                label={`${otherUsername} is typing`}
+                label={`${otherUser?.username ?? defaultUsername} is typing`}
                 color="blue"
               />
             )}
@@ -265,7 +301,7 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
           </div>
         </div>
         <div
-          className="flex h-full min-h-0 flex-col gap-3 overflow-x-hidden overflow-y-auto bg-slate-50 px-4 py-4 sm:px-6"
+          className="flex h-full min-h-0 flex-col gap-2 overflow-x-hidden overflow-y-auto bg-[#f7f8fa] px-4 py-3 sm:px-5"
           ref={chatRef}
         >
           {messages.map((message, i) => {
@@ -284,7 +320,7 @@ const Chat = forwardRef<IChatMethodsRef, IChatProps>(
         </div>
         {}
         <form
-          className={`grid h-fit w-full shrink-0 grid-cols-[1fr_auto] gap-2 border-t border-blue-100 bg-white p-3 sm:p-4 `}
+          className="grid h-fit w-full shrink-0 grid-cols-[1fr_auto] gap-2 border-t border-slate-200 bg-white p-2.5 sm:p-3"
           onSubmit={sendMessage}
         >
           <TextArea

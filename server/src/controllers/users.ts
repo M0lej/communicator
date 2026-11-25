@@ -93,7 +93,9 @@ export const deleteUser = async (
 
     if (chats) {
       chats.map(async (chat: IChat) => {
-        chat.users = chat.users.filter((userId) => !userId.equals(user._id));
+        chat.usersIds = chat.usersIds.filter(
+          (userId) => !userId.equals(user._id),
+        );
         await chat.save();
       });
     }

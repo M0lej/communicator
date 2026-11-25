@@ -22,20 +22,7 @@ export const getAvatar = async (
       (user && !user.avatarFileId) ||
       (user && !mongoose.Types.ObjectId.isValid(user.avatarFileId))
     ) {
-      res.setHeader("Content-Type", "image/png");
-      return res.sendFile(
-        path.join(__dirname, "../../public/default.png"),
-        (error) => {
-          if (error) {
-            console.error(error);
-            if (res.headersSent) {
-              res.destroy(error);
-            } else {
-              res.sendStatus(500);
-            }
-          }
-        },
-      );
+      return res.status(200).json(null).end();
     }
 
     const downloadStream = getAvatarDownloadStream(user.avatarFileId);

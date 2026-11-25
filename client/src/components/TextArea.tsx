@@ -12,7 +12,7 @@ export default function TextArea({
 }: IInput) {
   return (
     <div
-      className={`flex items-center border-2 border-blue-300 rounded-xl py-2 px-4 gap-3 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all duration-200 ${className} `}
+      className={`flex items-center rounded-lg border border-slate-300 bg-white py-2 px-3 gap-3 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all duration-150 ${className} `}
     >
       <textarea
         {...inputProps}

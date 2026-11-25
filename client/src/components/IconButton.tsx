@@ -14,7 +14,7 @@ export default function IconButton({
     <button
       {...buttonProps}
       type={type}
-      className={`flex cursor-pointer items-center justify-center rounded-lg p-2 text-blue-700 transition hover:bg-blue-50 hover:text-blue-900 ${className}`}
+      className={`flex cursor-pointer items-center justify-center rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 ${className}`}
     >
       {icon}
     </button>

@@ -3,41 +3,48 @@ import { useUserContext } from "../providers/UserProvider";
 import type { IMessage } from "../api/messages";
 import type { ButtonHTMLAttributes } from "react";
 import TypingIndicator from "./TypingIndicator";
-import { apiUrl } from "../api/client";
+import Avatar from "./Avatar";
+import type { IUserWithStatus } from "../api/users";
 
 interface IChatLink extends ButtonHTMLAttributes<HTMLButtonElement> {
   chat: IChatWithTypingInfo;
   className?: string;
   latestMessage?: IMessage;
+  selected?: boolean;
 }
 
 export default function ChatLink({
   chat,
   className,
   latestMessage,
+  selected = false,
   ...props
 }: IChatLink) {
   const { user } = useUserContext();
 
-  const label = (chat.userNames ?? []).filter(
-    (userName) => userName != user?.username,
-  )[0];
+  const otherUser: IUserWithStatus | null =
+    chat.users.find((chatUser) => chatUser._id != user?._id) ?? null;
+  const label = otherUser?.username ?? "Deleted user";
 
   if (!latestMessage) {
     latestMessage = chat.latestMessage;
   }
 
-  const otherUserId: string =
-    chat.users.find((chatUserId) => chatUserId != user?._id) ?? "";
-
   return (
     <button
-      className={`py-4 px-8 rounded-xl h-fit flex items-center gap-4 hover:bg-blue-50 transition-all duration-200 cursor-pointer border-b border-gray-100 ${className}`}
+      className={`h-[50px] flex items-center gap-2.5 px-2 rounded-md cursor-pointer transition-colors duration-150 ${
+        selected
+          ? "bg-indigo-50 text-slate-900"
+          : "hover:bg-slate-50 text-slate-800"
+      } ${className}`}
       {...props}
     >
-      <img
-        className="h-10 aspect-square rounded-full bg-gray-400"
-        src={apiUrl(`/api/avatar/${encodeURIComponent(otherUserId)}`)}
+      <Avatar
+        user={{
+          _id: otherUser?._id ?? "",
+          username: otherUser ? label : "X",
+        }}
+        className="h-8 w-8 rounded-full"
       />
       <div className="min-w-0 flex flex-col text-left">
         <h2 className="truncate font-semibold text-slate-800">{label}</h2>

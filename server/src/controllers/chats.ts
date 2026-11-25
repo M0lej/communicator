@@ -6,7 +6,12 @@ import {
   getChatsByUserId,
   IChat,
 } from "../models/chat";
-import { _getUsersByIds, getUserById, IUser } from "../models/user";
+import {
+  _addStatusToUsers,
+  _getUsersByIds,
+  getUserById,
+  IUser,
+} from "../models/user";
 import { get } from "lodash";
 import { getLatestMessageByChatId } from "../models/message";
 
@@ -22,17 +27,14 @@ export const getChats = async (req: express.Request, res: express.Response) => {
 
     const expandedChatsObjects = await Promise.all(
       chats.map(async (chat: IChat) => {
-        const chatUsers: IUser[] = (await _getUsersByIds(chat.users)) ?? [];
+        const chatUsers: IUser[] = _addStatusToUsers(
+          (await _getUsersByIds(chat.usersIds)) ?? [],
+        );
         const latestMessage = await getLatestMessageByChatId(chat._id);
-
-        const userNames =
-          chatUsers.length == 1
-            ? ["Deleted user", chatUsers[0].username]
-            : chatUsers.map((chatUser) => chatUser.username);
 
         return {
           ...chat.toObject(),
-          userNames,
+          users: chatUsers,
           latestMessage,
         };
       }),
@@ -59,13 +61,14 @@ export const getChat = async (req: express.Request, res: express.Response) => {
       return res.sendStatus(403);
     }
 
-    const chatUsers: IUser[] = (await _getUsersByIds(chat.users)) ?? [];
-
+    const chatUsers = _addStatusToUsers(
+      (await _getUsersByIds(chat.usersIds)) ?? [],
+    );
     return res
       .status(200)
       .json({
         ...chat.toObject(),
-        userNames: chatUsers.map((chatUser) => chatUser.username),
+        users: chatUsers,
       })
       .end();
   } catch (error) {
@@ -92,13 +95,15 @@ export const getChatByUserIds = async (
       return res.status(200).json(null).end();
     }
 
-    const chatUsers: IUser[] = (await _getUsersByIds(chat.users)) ?? [];
+    const chatUsers: IUser[] = _addStatusToUsers(
+      (await _getUsersByIds(chat.usersIds)) ?? [],
+    );
 
     return res
       .status(200)
       .json({
         ...chat.toObject(),
-        userNames: chatUsers.map((chatUser) => chatUser.username),
+        users: chatUsers,
       })
       .end();
   } catch (error) {
@@ -148,7 +153,7 @@ export const createChat = async (
       .status(200)
       .json({
         ...chat,
-        userNames: [currentUser.username, otherUser.username],
+        users: [currentUser, otherUser],
       })
       .end();
   } catch (error) {

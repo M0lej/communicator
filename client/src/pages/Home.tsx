@@ -115,6 +115,7 @@ export default function Home() {
           break;
         case "ACTIVE":
           FriendsActivityIndicatorRef.current?.refreshFriends(data);
+          selectedChatMethodsRef.current?.receiveNewStatus(data);
           break;
       }
     },
@@ -173,7 +174,7 @@ export default function Home() {
 
   async function openChat(otherUser: IUserWithStatus) {
     const chatExists = chats.find((chat: IChat) =>
-      chat.users.includes(otherUser._id),
+      chat.users.find((chatUser) => chatUser._id == otherUser._id),
     );
 
     if (chatExists) {
@@ -204,23 +205,38 @@ export default function Home() {
   return (
     <div
       ref={homeContainerRef}
-      className={`relative flex h-full min-h-0 w-full overflow-hidden bg-slate-50 ${isResizingChat ? "select-none" : ""}`}
+      className={`relative flex h-full min-h-0 w-full overflow-hidden bg-[#f7f8fa] ${isResizingChat ? "select-none" : ""}`}
     >
-      <section className="flex min-h-0 w-full flex-col border-r border-slate-200 bg-white pt-16">
+      <section
+        className={`flex min-h-0 shrink-0 flex-col border-r border-slate-200 bg-white ${
+          selectedChat ? "max-sm:hidden" : "w-full"
+        } md:w-70 lg:w-[320px]`}
+        style={
+          selectedChat
+            ? {
+                width: isChatFullscreen
+                  ? "100%"
+                  : chatWidth
+                    ? `calc(100% - ${chatWidth}px)`
+                    : "50%",
+              }
+            : undefined
+        }
+      >
         <FriendsActivityIndicator
           ref={FriendsActivityIndicatorRef}
           onClick={openChat}
         />
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <h2 className="px-6 pb-2 pt-4 text-lg font-semibold text-slate-900 sm:px-10">
-            Chats
+          <h2 className="px-4 pb-2 pt-4 text-[15px] font-bold text-slate-900">
+            Direct messages
           </h2>
 
           {isChatsLoading
             ? Array.from({ length: 5 }, (_, index) => (
                 <ChatLinkSkeleton
                   key={index}
-                  className="w-full rounded-none px-6 sm:px-10"
+                  className="w-full rounded-md px-3"
                 />
               ))
             : user &&
@@ -228,12 +244,13 @@ export default function Home() {
                 <ChatLink
                   chat={chat}
                   key={chat._id}
-                  className="w-full rounded-none px-6 sm:px-10"
+                  selected={selectedChat?._id === chat._id}
+                  className="mx-2 w-[calc(100%-1rem)] rounded-md"
                   onClick={() => setSelectedChat(chat)}
                 />
               ))}
           {!isChatsLoading && chats.length === 0 && (
-            <p className="px-6 py-4 text-sm text-slate-500 sm:px-10">
+            <p className="px-4 py-4 text-sm text-slate-500">
               No conversations yet. Start a chat with a friend.
             </p>
           )}
@@ -241,21 +258,31 @@ export default function Home() {
       </section>
       {selectedChat && (
         <section
-          className={`absolute inset-y-0 right-0 flex h-full min-h-0 w-1/2 origin-right flex-col border-l border-slate-200 bg-white shadow-lg max-sm:w-full ${isChatFullscreen ? "w-full" : ""} ${!isResizingChat ? "transition-[width]" : "transition-none"} duration-300 ease-in-out`}
+          className={`absolute right-0 z-10 flex h-full min-h-0 origin-right flex-col border-l border-slate-200 bg-white shadow-lg ${
+            isChatFullscreen
+              ? "inset-y-0 w-full"
+              : "inset-y-0 w-1/2 max-sm:inset-0 max-sm:w-full!"
+          } ${
+            isResizingChat
+              ? "transition-none"
+              : "transition-[width] duration-300 ease-in-out"
+          }`}
           style={
             chatWidth && !isChatFullscreen
               ? { width: `${chatWidth}px` }
               : undefined
           }
         >
-          <div
-            className="absolute inset-y-0 -left-5 z-10 hidden w-10 touch-none cursor-col-resize select-none md:block"
-            onPointerDown={onChatResizeStart}
-            onPointerMove={onChatResizeDrag}
-            onPointerUp={onChatResizeEnd}
-            onPointerCancel={onChatResizeEnd}
-            onLostPointerCapture={onChatResizeEnd}
-          />
+          {!isChatFullscreen && (
+            <div
+              className="absolute inset-y-0 -left-5 z-10 hidden w-10 touch-none cursor-col-resize select-none md:block"
+              onPointerDown={onChatResizeStart}
+              onPointerMove={onChatResizeDrag}
+              onPointerUp={onChatResizeEnd}
+              onPointerCancel={onChatResizeEnd}
+              onLostPointerCapture={onChatResizeEnd}
+            />
+          )}
           <Chat
             chat={selectedChat}
             ref={selectedChatMethodsRef}

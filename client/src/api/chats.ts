@@ -1,10 +1,11 @@
 import { api } from "./client";
 import type { IMessage } from "./messages";
+import type { IUserWithStatus } from "./users";
 
 export interface IChat {
   _id: string;
-  users: string[];
-  userNames: string[];
+  users: IUserWithStatus[];
+  usersIds: string[];
   latestMessage: IMessage;
 }
 

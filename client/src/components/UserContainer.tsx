@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 import { Form } from "react-router-dom";
 import type { UsersIntent } from "../api/users";
 import { useUserContext, type IUser } from "../providers/UserProvider";
-import { apiUrl } from "../api/client";
+import Avatar from "./Avatar";
 
 export type UserContainerVariant = "found" | "pending" | "sent" | "friend";
 
@@ -47,12 +47,11 @@ export function UserContainer(props: UserContainerProps) {
   const { user: currentUser } = useUserContext();
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-colors hover:border-blue-200 sm:px-6">
+    <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-900 transition-colors hover:border-indigo-200">
       <div className="flex items-center gap-4">
-        <img
-          src={apiUrl(`/api/avatar/${encodeURIComponent(user._id)}`)}
-          className="aspect-square h-10 rounded-full"
-          alt=""
+        <Avatar
+          user={user}
+          className="aspect-square h-10 w-10 rounded-full"
         />
         <span className="min-w-0 truncate font-medium">{user.username}</span>
       </div>

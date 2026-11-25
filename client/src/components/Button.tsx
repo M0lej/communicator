@@ -15,14 +15,14 @@ export default function Button({
       {...ButtonProps}
       className={`
         ${className}
-        rounded-xl
+        rounded-lg
         py-2.5
         px-6
         cursor-pointer
         font-semibold
         text-white
-        bg-blue-600
-        hover:bg-blue-700
+        bg-indigo-600
+        hover:bg-indigo-700
         active:scale-[0.98]
         transition-colors duration-150
         shadow-sm

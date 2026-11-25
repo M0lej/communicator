@@ -42,7 +42,7 @@ export default function Register() {
 
   return (
     <Form
-      className="mx-auto my-auto flex h-max w-full max-w-sm flex-col items-center gap-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+      className="mx-auto my-auto flex h-max w-[calc(100%-2rem)] max-w-sm flex-col items-center gap-4 rounded-lg border border-slate-200 bg-white p-5 sm:p-7"
       action="/register"
       method="post"
       ref={formRef}

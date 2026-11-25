@@ -14,8 +14,8 @@ export default function AccountSettingsField({
   editButton,
 }: Props) {
   return (
-    <div className="w-full space-y-4 bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-      <h1 className="font-bold flex gap-2 text-xl w-full text-blue-800">
+    <div className="w-full space-y-4 rounded-lg border border-slate-200 bg-white p-5">
+      <h1 className="flex w-full gap-2 text-base font-bold text-slate-800">
         {icon}
         {label}
         <div className="ml-auto mr-0">{editButton}</div>

@@ -64,13 +64,13 @@ export const FriendsActivityIndicator = forwardRef(
 
     useImperativeHandle(ref, () => ({ refreshFriends }), [refreshFriends]);
     return isFriendsLoading || hasFriendsError || friends.length > 0 ? (
-      <section className="border-b border-slate-200 px-6 py-4 sm:px-10">
+      <section className="min-w-0 border-b border-slate-200 px-3 py-3">
         {friends.length > 0 && (
-          <h2 className="mb-3 text-lg font-semibold text-slate-900">Friends</h2>
+          <h2 className="mb-2 text-[13px] font-bold text-slate-700">Friends</h2>
         )}
-        <div className="flex gap-4 overflow-x-auto pb-1">
+        <div className="flex w-full min-w-0 gap-4 overflow-x-auto pb-1">
           {isFriendsLoading
-            ? Array.from({ length: 4 }, (_, index) => (
+            ? Array.from({ length: 3 }, (_, index) => (
                 <UserStatusIndicatorSkeleton key={index} />
               ))
             : user &&

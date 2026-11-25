@@ -24,7 +24,7 @@ interface IPopup {
 }
 
 const actionVariantClasses = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:outline-blue-600",
+  primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:outline-indigo-600",
   danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:outline-red-600",
   secondary:
     "bg-slate-200 text-slate-800 hover:bg-slate-300 focus-visible:outline-slate-500",
@@ -67,7 +67,7 @@ export default function Popup({
       <div
         aria-labelledby={titleId}
         aria-modal="true"
-        className={`popup${closingAction ? " popup-closing" : ""} rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-xl`}
+        className={`popup${closingAction ? " popup-closing" : ""} rounded-lg border border-slate-200 bg-white p-6 text-center shadow-xl`}
         onAnimationEnd={handleAnimationEnd}
         onClick={(event) => event.stopPropagation()}
         role="dialog"

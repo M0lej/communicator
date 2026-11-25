@@ -7,7 +7,7 @@ import Input from "../components/Input";
 import Error, { isError, isUser } from "../components/Error";
 import Button from "../components/Button";
 import Popup from "../components/Popup";
-import { apiUrl } from "../api/client";
+import Avatar from "../components/Avatar";
 
 export default function Account() {
   const response = useActionData<unknown>();
@@ -61,8 +61,8 @@ export default function Account() {
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-slate-50 p-4 sm:flex sm:items-center sm:justify-center sm:p-8">
-      <div className="mx-auto h-fit w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+    <div className="h-full w-full overflow-y-auto bg-[#f7f8fa] p-3 sm:flex sm:items-start sm:justify-center sm:p-6">
+      <div className="mx-auto h-fit w-full max-w-2xl rounded-lg border border-slate-200 bg-white p-5 sm:p-7">
         <Form method="post" action="/account" encType="multipart/form-data">
           <div className="flex flex-col items-center justify-center gap-4">
             <input type="hidden" name="userId" value={user?._id ?? ""} />
@@ -73,9 +73,9 @@ export default function Account() {
               title="Change profile photo"
             >
               {user ? (
-                <img
+                <Avatar
                   className="h-30 aspect-square rounded-full ring-1 ring-slate-200"
-                  src={apiUrl(`/api/avatar/${encodeURIComponent(user._id)}`)}
+                  user={user}
                   alt={`${user.username}'s profile picture`}
                 />
               ) : (
@@ -190,7 +190,7 @@ export default function Account() {
 
                     <button
                       type="submit"
-                      className="my-4 w-full cursor-pointer rounded-xl bg-blue-600 px-6 py-3 font-bold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                      className="my-4 w-full cursor-pointer rounded-lg bg-indigo-600 px-6 py-2.5 font-bold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     >
                       SUBMIT
                     </button>

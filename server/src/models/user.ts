@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { activeUsers } from "../controllers/ws";
 
 export interface IUser extends Document {
   username: string;
@@ -15,6 +16,10 @@ export interface IUser extends Document {
   receiveFriendRequestAccept(otherId: string): Promise<IUser>;
   removePendingFriendRequest(otherId: string): Promise<IUser>;
   removeSentFriendRequest(otherId: string): Promise<IUser>;
+}
+
+export interface IUserWithStatus extends IUser {
+  status: boolean;
 }
 
 export interface IUserWithAuth extends IUser {
@@ -185,3 +190,9 @@ export const _getPendingFriendRequests = (currentUser: IUser) =>
   UserModel.find({
     _id: { $in: currentUser.pendingFriendRequests },
   });
+
+export const _addStatusToUsers = (users: IUser[]) =>
+  users.map((user) => ({
+    ...user.toObject(),
+    status: activeUsers.has(user._id.toString()),
+  }));
