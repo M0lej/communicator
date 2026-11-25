@@ -72,7 +72,7 @@ export const isParticipant = async (
       return res.sendStatus(403);
     }
 
-    if (!chat.users.find((id) => id.equals(userId))) {
+    if (!chat.usersIds.find((id) => id.equals(userId))) {
       return res.sendStatus(403);
     }
 
