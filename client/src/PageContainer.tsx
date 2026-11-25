@@ -83,7 +83,7 @@ export default function PageContainer({ page }: { page?: ReactNode }) {
 
   return (
     <div
-      className={`grid h-dvh w-screen grid-rows-[minmax(0,1fr)] overflow-hidden bg-slate-50 pb-5 max-sm:grid-cols-1 ${
+      className={`grid h-dvh w-full grid-rows-[minmax(0,1fr)] overflow-hidden bg-slate-50 pb-5 max-sm:grid-cols-1 ${
         user
           ? "grid-cols-[64px_minmax(0,1fr)] max-sm:grid-rows-[minmax(0,1fr)_64px]"
           : "grid-cols-[minmax(0,1fr)]"

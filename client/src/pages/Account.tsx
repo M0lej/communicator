@@ -61,8 +61,8 @@ export default function Account() {
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#f7f8fa] p-3 sm:flex sm:items-start sm:justify-center sm:p-6">
-      <div className="mx-auto h-fit w-full max-w-2xl rounded-lg border border-slate-200 bg-white p-5 sm:p-7">
+    <div className="h-full w-full overflow-y-auto bg-[#f7f8fa] px-0 py-3 sm:flex sm:items-start sm:justify-center sm:p-6">
+      <div className="mx-auto h-fit w-full max-w-2xl rounded-none border border-slate-200 bg-white p-5 sm:rounded-lg sm:p-7">
         <Form method="post" action="/account" encType="multipart/form-data">
           <div className="flex flex-col items-center justify-center gap-4">
             <input type="hidden" name="userId" value={user?._id ?? ""} />
